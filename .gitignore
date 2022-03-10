@@ -17,3 +17,5 @@
 # IDE files
 .vscode
 .idea
+
+vendor

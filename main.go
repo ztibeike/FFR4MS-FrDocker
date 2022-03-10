@@ -3,12 +3,14 @@ package main
 import (
 	"errors"
 	"fmt"
+	"frdocker/constants"
 	"frdocker/types"
 	"frdocker/utils"
 	"log"
 	"strings"
 
 	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 )
 
@@ -28,7 +30,8 @@ func runRecovery(ifaceName string, confPath string) {
 	}
 	utils.GetServiceContainers(containers)
 	fmt.Println(containers)
-	handler, err = pcap.OpenLive(ifaceName, 0, true, pcap.BlockForever)
+	handler, err = pcap.OpenLive(ifaceName, 1600, true, pcap.BlockForever)
+	defer handler.Close()
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -43,7 +46,30 @@ func runRecovery(ifaceName string, confPath string) {
 		select {
 		case packet := <-packets:
 			{
-				fmt.Println(packet)
+				// fmt.Println(packet)
+				if packet == nil || packet.NetworkLayer() == nil || packet.TransportLayer() == nil || packet.TransportLayer().LayerType() != layers.LayerTypeTCP {
+					continue
+				}
+				tcp := packet.TransportLayer().(*layers.TCP)
+				srcIP := packet.NetworkLayer().NetworkFlow().Src().String()
+				dstIP := packet.NetworkLayer().NetworkFlow().Dst().String()
+				if srcIP == "172.19.0.2" || dstIP == "172.19.0.2" {
+					continue
+				}
+				if len(tcp.Payload) < 16 {
+					continue
+				}
+				if constants.IPServiceContainerMap.Has(srcIP) || constants.IPServiceContainerMap.Has(dstIP) {
+					fmt.Printf("%s -> %s\n", srcIP, dstIP)
+					fmt.Println(string(tcp.Payload))
+					httpType, _ := utils.GetHttpType(tcp.Payload)
+					fmt.Printf("Http type: %s\n", httpType)
+					if httpType == "REQUEST" {
+						traceId := utils.GetTraceId(tcp.Payload)
+						fmt.Printf("TraceId: %s\n", traceId)
+					}
+					fmt.Println("----------------------------------")
+				}
 			}
 		}
 	}
@@ -51,7 +77,7 @@ func runRecovery(ifaceName string, confPath string) {
 }
 
 func main() {
-	var ifaceName = "br-d3bce3e90ea6"
+	var ifaceName = "br-eb67d5a21c9c"
 	var confPath = "http://localhost:8030/getConf"
 	runRecovery(ifaceName, confPath)
 }

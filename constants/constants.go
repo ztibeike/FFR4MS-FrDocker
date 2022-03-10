@@ -2,4 +2,5 @@ package constants
 
 import cmap "github.com/orcaman/concurrent-map"
 
-var IPContainerMap = cmap.New()
+var IPServiceContainerMap = cmap.New()
+var IPAllMSMap = cmap.New()

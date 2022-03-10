@@ -35,3 +35,13 @@ type ServiceDetail struct {
 	Gateway string
 	Health  string
 }
+
+type HttpInfo struct {
+	Type     string
+	SrcIP    string
+	SrcPort  string
+	DstIP    string
+	DstPort  string
+	TraceId  string
+	Internal bool
+}
