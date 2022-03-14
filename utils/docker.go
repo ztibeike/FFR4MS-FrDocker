@@ -13,7 +13,7 @@ import (
 var dockerClient, _ = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 var ctx = context.Background()
 
-func GetServiceContainers(containers []types.Container) {
+func GetServiceContainers(containers []*types.Container) {
 	originContainers, err := dockerClient.ContainerList(ctx, dockerTypes.ContainerListOptions{})
 	if err != nil {
 		log.Fatalln(err)
@@ -27,11 +27,11 @@ func GetServiceContainers(containers []types.Container) {
 		}
 		originContainersMap[IP] = originContainer
 	}
-	for idx, container := range containers {
+	for _, container := range containers {
 		if originContainer, ok := originContainersMap[container.IP]; ok {
 			container.ID = originContainer.ID
 			container.Name = originContainer.Names[0]
-			containers[idx] = container
+			// containers[idx] = container
 		}
 	}
 }

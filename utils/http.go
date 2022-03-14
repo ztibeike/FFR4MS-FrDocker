@@ -80,13 +80,13 @@ func GetTraceId(payload []byte) string {
 	return strings.Split(traceId, ": ")[1]
 }
 
-func GetHttpInfo(packet gopacket.Packet, tcpLayer *layers.TCP, payload []byte) (*types.HttpInfo, error) {
+func GetHttpInfo(packet gopacket.Packet, tcpLayer *layers.TCP) (*types.HttpInfo, error) {
 	srcIP := packet.NetworkLayer().NetworkFlow().Src().String()
 	dstIP := packet.NetworkLayer().NetworkFlow().Dst().String()
 	srcPort := strconv.Itoa(int(tcpLayer.SrcPort))
 	dstPort := strconv.Itoa(int(tcpLayer.DstPort))
-
-	if constants.IPAllMSMap.Has(srcIP) || constants.IPAllMSMap.Has(dstIP) {
+	payload := tcpLayer.Payload
+	if constants.IPAllMSMap.Has(srcIP) && constants.IPAllMSMap.Has(dstIP) {
 		httpInfo := &types.HttpInfo{
 			SrcIP:   srcIP,
 			SrcPort: srcPort,
@@ -98,10 +98,8 @@ func GetHttpInfo(packet gopacket.Packet, tcpLayer *layers.TCP, payload []byte) (
 			return httpInfo, err
 		}
 		httpInfo.Type = httpType
-		if httpType == "REQUEST" {
-			httpInfo.TraceId = GetTraceId(payload)
-			httpInfo.Internal = constants.IPAllMSMap.Has(srcIP)
-		}
+		httpInfo.TraceId = GetTraceId(payload)
+		httpInfo.Internal = constants.IPAllMSMap.Has(srcIP)
 		return httpInfo, nil
 	}
 	return &types.HttpInfo{}, errors.New("non-sense packet")

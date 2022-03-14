@@ -45,3 +45,8 @@ type HttpInfo struct {
 	TraceId  string
 	Internal bool
 }
+
+type ServiceGroup struct {
+	Gateway  string
+	Services []string
+}

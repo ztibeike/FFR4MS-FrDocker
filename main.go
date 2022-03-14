@@ -19,7 +19,7 @@ func runRecovery(ifaceName string, confPath string) {
 	var err error
 	var handler *pcap.Handle
 	var filter = "tcp"
-	var containers []types.Container
+	var containers []*types.Container
 	if strings.HasPrefix(confPath, "http") {
 		containers = utils.GetConfigFromEureka(confPath)
 		if err != nil {
@@ -29,12 +29,11 @@ func runRecovery(ifaceName string, confPath string) {
 		log.Fatalln(errors.New("do not support file-config yet"))
 	}
 	utils.GetServiceContainers(containers)
-	fmt.Println(containers)
 	handler, err = pcap.OpenLive(ifaceName, 1600, true, pcap.BlockForever)
-	defer handler.Close()
 	if err != nil {
 		log.Fatalln(err)
 	}
+	defer handler.Close()
 	if err = handler.SetBPFFilter(filter); err != nil {
 		log.Fatalln(err)
 	}
@@ -42,42 +41,55 @@ func runRecovery(ifaceName string, confPath string) {
 	packetSource := gopacket.NewPacketSource(handler, handler.LinkType())
 	packets := packetSource.Packets()
 
-	for {
-		select {
-		case packet := <-packets:
-			{
-				// fmt.Println(packet)
-				if packet == nil || packet.NetworkLayer() == nil || packet.TransportLayer() == nil || packet.TransportLayer().LayerType() != layers.LayerTypeTCP {
-					continue
-				}
-				tcp := packet.TransportLayer().(*layers.TCP)
-				srcIP := packet.NetworkLayer().NetworkFlow().Src().String()
-				dstIP := packet.NetworkLayer().NetworkFlow().Dst().String()
-				if srcIP == "172.19.0.2" || dstIP == "172.19.0.2" {
-					continue
-				}
-				if len(tcp.Payload) < 16 {
-					continue
-				}
-				if constants.IPServiceContainerMap.Has(srcIP) || constants.IPServiceContainerMap.Has(dstIP) {
-					fmt.Printf("%s -> %s\n", srcIP, dstIP)
-					fmt.Println(string(tcp.Payload))
-					httpType, _ := utils.GetHttpType(tcp.Payload)
-					fmt.Printf("Http type: %s\n", httpType)
-					if httpType == "REQUEST" {
-						traceId := utils.GetTraceId(tcp.Payload)
-						fmt.Printf("TraceId: %s\n", traceId)
-					}
-					fmt.Println("----------------------------------")
-				}
-			}
-		}
-	}
+	var IPChanMap = make(map[string]chan *types.HttpInfo)
 
+	for packet := range packets {
+		// fmt.Println(packet)
+		if packet == nil || packet.NetworkLayer() == nil || packet.TransportLayer() == nil || packet.TransportLayer().LayerType() != layers.LayerTypeTCP {
+			continue
+		}
+		tcp := packet.TransportLayer().(*layers.TCP)
+		srcIP := packet.NetworkLayer().NetworkFlow().Src().String()
+		dstIP := packet.NetworkLayer().NetworkFlow().Dst().String()
+		if !(constants.IPAllMSMap.Has(srcIP) && constants.IPAllMSMap.Has(dstIP)) {
+			continue
+		}
+		if len(tcp.Payload) < 16 {
+			continue
+		}
+		var httpInfo *types.HttpInfo
+		if httpInfo, err = utils.GetHttpInfo(packet, tcp); err != nil {
+			log.Println(err.Error())
+			continue
+		}
+		var currentIP string // 当前http应该检测的服务IP
+		if constants.IPServiceContainerMap.Has(srcIP) {
+			currentIP = srcIP
+		} else {
+			currentIP = dstIP
+		}
+		var httpChan chan *types.HttpInfo
+		var ok bool
+		if httpChan, ok = IPChanMap[currentIP]; ok {
+			httpChan <- httpInfo
+		} else {
+			httpChan = make(chan *types.HttpInfo)
+			go utils.StateMonitor(currentIP, httpChan)
+			httpChan <- httpInfo
+			IPChanMap[currentIP] = httpChan
+		}
+		// fmt.Printf("%s -> %s\n", srcIP, dstIP)
+		// fmt.Println(string(tcp.Payload))
+		// httpType, _ := utils.GetHttpType(tcp.Payload)
+		// fmt.Printf("Http type: %s\n", httpType)
+		// traceId := utils.GetTraceId(tcp.Payload)
+		// fmt.Printf("TraceId: %s\n", traceId)
+		// fmt.Println("----------------------------------")
+	}
 }
 
 func main() {
-	var ifaceName = "br-eb67d5a21c9c"
+	var ifaceName = "br-46facbce86c7"
 	var confPath = "http://localhost:8030/getConf"
 	runRecovery(ifaceName, confPath)
 }

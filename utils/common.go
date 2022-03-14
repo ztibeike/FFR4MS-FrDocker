@@ -30,19 +30,22 @@ func HttpRequest(url string, method string, result interface{}) {
 }
 
 // 从Eureka注册中心获取配置信息
-func GetConfigFromEureka(confPath string) []types.Container {
+func GetConfigFromEureka(confPath string) []*types.Container {
 	resp := types.EurekaConfig{}
 	HttpRequest(confPath, "GET", &resp)
-	var gatewayMap = make(map[string]string)
 	for _, gateway := range resp.ArrayGetWay {
 		url := "http://" + gateway + "/actuator/info"
 		gatewayInfo := types.GatewayActuatorInfo{}
 		HttpRequest(url, "GET", &gatewayInfo)
-		gatewayMap[gatewayInfo.Getway] = gateway
 		colon := strings.Index(gateway, ":")
-		constants.IPAllMSMap.Set(gateway[:colon], "GATEWAY")
+		constants.IPAllMSMap.Set(gateway[:colon], "GATEWAY:"+gatewayInfo.Getway)
+		serviceGroup := &types.ServiceGroup{
+			Gateway: gateway,
+		}
+		constants.ServiceGroupMap.Set(gatewayInfo.Getway, serviceGroup)
 	}
-	var containers []types.Container
+	var containers []*types.Container
+	var obj interface{}
 	for idx, service := range resp.ArrayIpPort {
 		serviceInfo := types.ServiceActuatorInfo{}
 		serviceInfoURL := "http://" + service + "/actuator/info"
@@ -51,17 +54,20 @@ func GetConfigFromEureka(confPath string) []types.Container {
 		serviceHealthURL := "http://" + service + "/actuator/health"
 		HttpRequest(serviceHealthURL, "GET", &serviceHealth)
 		colon := strings.Index(service, ":")
-		container := types.Container{
+		obj, _ = constants.ServiceGroupMap.Get(resp.ArrayGroup[idx])
+		serviceGroup := obj.(*types.ServiceGroup)
+		serviceGroup.Services = append(serviceGroup.Services, service[:colon])
+		container := &types.Container{
 			IP:      service[:colon],
 			Port:    service[colon+1:],
 			Group:   resp.ArrayGroup[idx],
-			Gateway: gatewayMap[resp.ArrayGroup[idx]],
+			Gateway: serviceGroup.Gateway,
 			Leaf:    serviceInfo.Leaf == 1,
 			Health:  strings.ToUpper(serviceHealth.Status) == "UP",
 		}
 		containers = append(containers, container)
 		constants.IPServiceContainerMap.Set(container.IP, container)
-		constants.IPAllMSMap.Set(service[:colon], "SERVICE")
+		constants.IPAllMSMap.Set(service[:colon], "SERVICE:"+container.Group)
 	}
 	return containers
 }
