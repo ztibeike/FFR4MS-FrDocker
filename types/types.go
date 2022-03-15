@@ -20,13 +20,13 @@ type Container struct {
 
 // 微服务状态
 type State struct {
+	sync.RWMutex
 	Id       *StateId
 	Ecc      float64
 	Variance *Vector
 	Sigma    float64
 	K        int64
 	MaxTime  float64
-	Mutex    *sync.RWMutex
 }
 
 type StateId struct {

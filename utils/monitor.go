@@ -5,7 +5,6 @@ import (
 	"frdocker/constants"
 	"frdocker/types"
 	"math"
-	"sync"
 	"time"
 )
 
@@ -75,7 +74,6 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 						},
 					},
 					K:        1,
-					Mutex:    &sync.RWMutex{},
 					Variance: &types.Vector{},
 				})
 			}
@@ -85,8 +83,8 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 			}
 			ecc := TEDA(container.States[idx], data)
 			var now = time.Now().Format("2006-01-02 15:04:05")
-			fmt.Printf("\n[Checking State] [%s] [TraceId(%s)] Group(%s) IP(%s) ID(%s) State(%d): Eccentricity(%f)\n",
-				now, traceId, container.Group, container.IP, container.ID[:10], idx, ecc)
+			fmt.Printf("\n[Checking State] [%s] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) TimeInterval(%dns) Eccentricity(%f)]\n",
+				now, traceId, container.Group, container.IP, container.ID[:10], idx, int(timeInterval), ecc)
 			idx += 1
 			httpInfo_start = nil
 			httpInfo_end = nil
@@ -97,27 +95,27 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 
 func TEDA(state *types.State, data *types.Vector) float64 {
 	if state.K == 1 {
-		state.Mutex.Lock()
+		state.Lock()
 		state.Variance.Data = make([]float64, len(data.Data))
 		copy(state.Variance.Data, data.Data)
 		state.Sigma = 0.0
 		state.Ecc = math.NaN()
 		state.K = state.K + 1
-		state.Mutex.Unlock()
+		state.Unlock()
 		return math.NaN()
 	}
 
-	state.Mutex.RLock()
+	state.RLock()
 	variance := state.Variance.Copy()
 	sigma := state.Sigma
 	k := state.K
-	state.Mutex.RUnlock()
+	state.RUnlock()
 
 	variance = variance.ScaleVec(float64(k-1) / float64(k)).AddVec(data.ScaleVec(1.0 / float64(k)))
 	sigma = sigma*(float64(k-1)/float64(k)) + 1.0/float64(k-1)*math.Pow(data.SubVec(variance).Norm(), 2)
 	normalized_ecc := 1.0 / float64(2*k) * (1.0 + data.SubVec(variance).T().MulVec(data.SubVec(variance))/sigma)
-	state.Mutex.Lock()
-	defer state.Mutex.Unlock()
+	state.Lock()
+	defer state.Unlock()
 	state.Ecc = normalized_ecc
 	state.Sigma = sigma
 	state.Ecc = normalized_ecc
