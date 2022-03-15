@@ -100,6 +100,7 @@ func GetHttpInfo(packet gopacket.Packet, tcpLayer *layers.TCP) (*types.HttpInfo,
 		httpInfo.Type = httpType
 		httpInfo.TraceId = GetTraceId(payload)
 		httpInfo.Internal = constants.IPAllMSMap.Has(srcIP)
+		httpInfo.Timestamp = packet.Metadata().Timestamp
 		return httpInfo, nil
 	}
 	return &types.HttpInfo{}, errors.New("non-sense packet")

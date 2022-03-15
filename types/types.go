@@ -1,5 +1,10 @@
 package types
 
+import (
+	"sync"
+	"time"
+)
+
 // 微服务/容器
 type Container struct {
 	IP      string
@@ -10,14 +15,28 @@ type Container struct {
 	Health  bool
 	ID      string
 	Name    string
-	States  []State
+	States  []*State
 }
 
 // 微服务状态
 type State struct {
-	Id      int64
-	History []float64
-	MaxTime float64
+	Id       *StateId
+	Ecc      float64
+	Variance *Vector
+	Sigma    float64
+	K        int64
+	MaxTime  float64
+	Mutex    *sync.RWMutex
+}
+
+type StateId struct {
+	StartWith *StateEndpointEvent
+	EndWith   *StateEndpointEvent
+}
+
+type StateEndpointEvent struct {
+	IP       string
+	HttpType string
 }
 
 // 服务发现配置: 来自Eureka Server或配置文件
@@ -37,13 +56,14 @@ type ServiceDetail struct {
 }
 
 type HttpInfo struct {
-	Type     string
-	SrcIP    string
-	SrcPort  string
-	DstIP    string
-	DstPort  string
-	TraceId  string
-	Internal bool
+	Type      string
+	SrcIP     string
+	SrcPort   string
+	DstIP     string
+	DstPort   string
+	TraceId   string
+	Timestamp time.Time
+	Internal  bool
 }
 
 type ServiceGroup struct {
