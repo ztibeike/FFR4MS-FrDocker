@@ -41,7 +41,7 @@ func runRecovery(ifaceName string, confPath string) {
 	packetSource := gopacket.NewPacketSource(handler, handler.LinkType())
 	packets := packetSource.Packets()
 
-	var IPChanMap = make(map[string]chan *types.HttpInfo)
+	// var IPChanMap = make(map[string]chan *types.HttpInfo)
 
 	for packet := range packets {
 		// fmt.Println(packet)
@@ -68,15 +68,20 @@ func runRecovery(ifaceName string, confPath string) {
 		} else {
 			currentIP = dstIP
 		}
+		obj, _ := constants.IPServiceContainerMap.Get(currentIP)
+		var currentContainer = obj.(*types.Container)
+		if !currentContainer.Health {
+			continue
+		}
 		var httpChan chan *types.HttpInfo
 		var ok bool
-		if httpChan, ok = IPChanMap[currentIP]; ok {
+		if httpChan, ok = constants.IPChanMap[currentIP]; ok {
 			httpChan <- httpInfo
 		} else {
 			httpChan = make(chan *types.HttpInfo)
 			go utils.StateMonitor(currentIP, httpChan)
 			httpChan <- httpInfo
-			IPChanMap[currentIP] = httpChan
+			constants.IPChanMap[currentIP] = httpChan
 		}
 		// fmt.Printf("%s -> %s\n", srcIP, dstIP)
 		// fmt.Println(string(tcp.Payload))

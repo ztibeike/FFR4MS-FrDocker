@@ -27,6 +27,7 @@ type State struct {
 	Sigma    float64
 	K        int64
 	MaxTime  float64
+	MinTime  float64
 }
 
 type StateId struct {

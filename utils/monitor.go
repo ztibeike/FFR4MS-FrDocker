@@ -1,10 +1,15 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"frdocker/constants"
 	"frdocker/types"
+	"io/ioutil"
+	"log"
 	"math"
+	"net"
+	"net/http"
 	"time"
 )
 
@@ -32,12 +37,16 @@ func StateMonitor(IP string, httpChan chan *types.HttpInfo) {
 		}
 		// fmt.Println(*httpInfo)
 	}
+	for _, ch := range TraceMap {
+		close(ch)
+	}
 }
 
 func CheckingStateByTraceId(traceId string, container *types.Container, httpChan chan *types.HttpInfo) {
 	var idx = 0
 	var httpInfo_start *types.HttpInfo = nil
 	var httpInfo_end *types.HttpInfo = nil
+	// var timeOutIdx = -1
 	for httpInfo := range httpChan {
 		// var now = time.Now().Format("2006-01-02 15:04:05")
 		// var otherIP string
@@ -59,8 +68,6 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 		// }
 		if httpInfo_start == nil {
 			httpInfo_start = httpInfo
-		} else {
-			httpInfo_end = httpInfo
 			if len(container.States) <= idx {
 				container.States = append(container.States, &types.State{
 					Id: &types.StateId{
@@ -68,24 +75,30 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 							IP:       httpInfo_start.SrcIP,
 							HttpType: httpInfo_start.Type,
 						},
-						EndWith: &types.StateEndpointEvent{
-							IP:       httpInfo_end.DstIP,
-							HttpType: httpInfo_end.Type,
-						},
 					},
 					K:        1,
 					Variance: &types.Vector{},
 				})
 			}
+			go CheckTimeExceedNotEnd(container, traceId, idx, &idx)
+		} else {
+			httpInfo_end = httpInfo
+			currentIdx := idx
+			idx += 1
+			container.States[currentIdx].Id.EndWith = &types.StateEndpointEvent{
+				IP:       httpInfo_end.DstIP,
+				HttpType: httpInfo_end.Type,
+			}
 			timeInterval := math.Abs(float64(httpInfo_end.Timestamp.Nanosecond() - httpInfo_start.Timestamp.Nanosecond()))
 			data := &types.Vector{
 				Data: []float64{timeInterval},
 			}
-			ecc := TEDA(container.States[idx], data)
+			ecc := TEDA(container.States[currentIdx], data)
 			var now = time.Now().Format("2006-01-02 15:04:05")
-			fmt.Printf("\n[Checking State] [%s] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) TimeInterval(%dns) Eccentricity(%f)]\n",
-				now, traceId, container.Group, container.IP, container.ID[:10], idx, int(timeInterval), ecc)
-			idx += 1
+			fmt.Printf("\n[Checking State] [%s] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) TimeInterval(%dns) Eccentricity(%f) MinTime(%d) MaxTime(%d) Sigma(%f)]\n",
+				now, traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(timeInterval), ecc,
+				int(container.States[currentIdx].MinTime), int(container.States[currentIdx].MaxTime), math.Sqrt(container.States[currentIdx].Sigma))
+
 			httpInfo_start = nil
 			httpInfo_end = nil
 		}
@@ -101,6 +114,8 @@ func TEDA(state *types.State, data *types.Vector) float64 {
 		state.Sigma = 0.0
 		state.Ecc = math.NaN()
 		state.K = state.K + 1
+		state.MaxTime = state.Variance.Data[0] + constants.NSigma*state.Variance.Data[0]
+		state.MinTime = state.Variance.Data[0] - constants.NSigma*state.Variance.Data[0]
 		state.Unlock()
 		return math.NaN()
 	}
@@ -121,5 +136,64 @@ func TEDA(state *types.State, data *types.Vector) float64 {
 	state.Ecc = normalized_ecc
 	state.K = state.K + 1
 	copy(state.Variance.Data, variance.Data)
+	state.MaxTime = state.Variance.Data[0] + constants.NSigma*math.Sqrt(state.Sigma)
+	state.MinTime = state.Variance.Data[0] - constants.NSigma*math.Sqrt(state.Sigma)
 	return normalized_ecc
+}
+
+func MarkContainerUnHealthy(container *types.Container) {
+
+}
+
+func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentIdx int, idx *int) {
+	state := container.States[currentIdx]
+	if state.K == 1 {
+		return
+	}
+	t := time.Duration(state.MaxTime) + 1
+	time.Sleep(t)
+	if *idx == currentIdx {
+		health := CheckHealthByLocalActuator(container, currentIdx)
+		log.Printf("\n[Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
+			traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(state.MaxTime), health)
+	}
+}
+
+func CheckHealthByLocalActuator(container *types.Container, idx int) bool {
+	var IP = container.IP
+	var port = container.Port
+	var maxTime = container.States[idx].MaxTime
+	var client = &http.Client{
+		Transport: &http.Transport{
+			Dial: func(network, addr string) (net.Conn, error) {
+				conn, err := net.DialTimeout(network, addr, time.Duration(maxTime)*2)
+				if err != nil {
+					return nil, err
+				}
+				conn.SetDeadline(time.Now().Add(time.Duration(maxTime) * 2))
+				return conn, nil
+			},
+			ResponseHeaderTimeout: time.Duration(maxTime) * 2,
+		},
+	}
+	var url = fmt.Sprintf("http://%s:%s/actuator/health", IP, port)
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return false
+	}
+	response, err := client.Do(request)
+	if err != nil || response.StatusCode != 200 {
+		return false
+	}
+	defer response.Body.Close()
+	var resp = &types.ServiceActuatorHealth{}
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return false
+	}
+	err = json.Unmarshal(body, resp)
+	if err != nil || resp.Status != "UP" {
+		return false
+	}
+	return true
 }
