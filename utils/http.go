@@ -72,7 +72,7 @@ func GetTraceId(payload []byte) string {
 	dataRune := []rune(data)
 	var traceId string
 	for i := idx; i < len(dataRune); i++ {
-		if string(dataRune[i]) == "\n" {
+		if string(dataRune[i]) == "\r" || string(dataRune[i]) == "\n" {
 			break
 		}
 		traceId += string(dataRune[i])

@@ -41,6 +41,7 @@ func runRecovery(ifaceName string, confPath string) {
 	packetSource := gopacket.NewPacketSource(handler, handler.LinkType())
 	packets := packetSource.Packets()
 
+	go utils.SetupCloseHandler()
 	// var IPChanMap = make(map[string]chan *types.HttpInfo)
 
 	for packet := range packets {

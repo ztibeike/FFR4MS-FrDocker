@@ -104,7 +104,7 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 				}
 			}
 			var now = time.Now().Format("2006-01-02 15:04:05")
-			fmt.Printf("\n[%s] [Checking State]  [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) TimeInterval(%dns) Eccentricity(%f) MinTime(%d) MaxTime(%d) Health(%t)]\n",
+			fmt.Printf("\n[%s] [Checking State] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) TimeInterval(%dns) Eccentricity(%f) MinTime(%d) MaxTime(%d) Health(%t)]\n",
 				now, traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(timeInterval), ecc,
 				int(container.States[currentIdx].MinTime), int(container.States[currentIdx].MaxTime), health)
 			httpInfo_start = nil
