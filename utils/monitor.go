@@ -1,14 +1,13 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"frdocker/constants"
 	"frdocker/types"
 	"io/ioutil"
-	"log"
 	"math"
-	"net"
 	"net/http"
 	"time"
 )
@@ -17,7 +16,8 @@ func StateMonitor(IP string, httpChan chan *types.HttpInfo) {
 	// var traceIdStateMap = make(map[string]types.State)
 	obj, _ := constants.IPServiceContainerMap.Get(IP)
 	var container = obj.(*types.Container)
-	fmt.Printf("\n[Monitoring Container] Group(%s) IP(%s) ID(%s)\n", container.Group, container.IP, container.ID[:10])
+	fmt.Printf("\n[%s] [Monitoring Container] Group(%s) IP(%s) ID(%s)\n",
+		time.Now().Format("2006-01-02 15:04:05"), container.Group, container.IP, container.ID[:10])
 	var TraceMap = make(map[string]chan *types.HttpInfo) // TraceId为key，每个TraceId开启一个go routine
 	for httpInfo := range httpChan {
 		var channel chan *types.HttpInfo
@@ -37,8 +37,9 @@ func StateMonitor(IP string, httpChan chan *types.HttpInfo) {
 		}
 		// fmt.Println(*httpInfo)
 	}
-	for _, ch := range TraceMap {
+	for traceId, ch := range TraceMap {
 		close(ch)
+		delete(TraceMap, traceId)
 	}
 }
 
@@ -94,11 +95,18 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 				Data: []float64{timeInterval},
 			}
 			ecc := TEDA(container.States[currentIdx], data)
+			var threshold = (math.Pow(constants.NSigma, 2) + 1) / float64((2 * container.States[currentIdx].K))
+			var health = container.Health
+			if ecc > threshold && health {
+				health = CheckHealthByLocalActuator(container, currentIdx)
+				if !health {
+					MarkContainerUnHealthy(container)
+				}
+			}
 			var now = time.Now().Format("2006-01-02 15:04:05")
-			fmt.Printf("\n[Checking State] [%s] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) TimeInterval(%dns) Eccentricity(%f) MinTime(%d) MaxTime(%d) Sigma(%f)]\n",
+			fmt.Printf("\n[%s] [Checking State]  [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) TimeInterval(%dns) Eccentricity(%f) MinTime(%d) MaxTime(%d) Health(%t)]\n",
 				now, traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(timeInterval), ecc,
-				int(container.States[currentIdx].MinTime), int(container.States[currentIdx].MaxTime), math.Sqrt(container.States[currentIdx].Sigma))
-
+				int(container.States[currentIdx].MinTime), int(container.States[currentIdx].MaxTime), health)
 			httpInfo_start = nil
 			httpInfo_end = nil
 		}
@@ -141,10 +149,6 @@ func TEDA(state *types.State, data *types.Vector) float64 {
 	return normalized_ecc
 }
 
-func MarkContainerUnHealthy(container *types.Container) {
-
-}
-
 func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentIdx int, idx *int) {
 	state := container.States[currentIdx]
 	if state.K == 1 {
@@ -154,8 +158,11 @@ func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentId
 	time.Sleep(t)
 	if *idx == currentIdx {
 		health := CheckHealthByLocalActuator(container, currentIdx)
-		log.Printf("\n[Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
-			traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(state.MaxTime), health)
+		if !health {
+			MarkContainerUnHealthy(container)
+		}
+		logger.Printf("\n[%s] [Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
+			time.Now().Format("2006-01-02 15:04:05"), traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(state.MaxTime), health)
 	}
 }
 
@@ -164,17 +171,20 @@ func CheckHealthByLocalActuator(container *types.Container, idx int) bool {
 	var port = container.Port
 	var maxTime = container.States[idx].MaxTime
 	var client = &http.Client{
-		Transport: &http.Transport{
-			Dial: func(network, addr string) (net.Conn, error) {
-				conn, err := net.DialTimeout(network, addr, time.Duration(maxTime)*2)
-				if err != nil {
-					return nil, err
-				}
-				conn.SetDeadline(time.Now().Add(time.Duration(maxTime) * 2))
-				return conn, nil
-			},
-			ResponseHeaderTimeout: time.Duration(maxTime) * 2,
-		},
+
+		// probably cause timeout
+
+		// Transport: &http.Transport{
+		// 	Dial: func(network, addr string) (net.Conn, error) {
+		// 		conn, err := net.DialTimeout(network, addr, time.Duration(maxTime)*2)
+		// 		if err != nil {
+		// 			return nil, err
+		// 		}
+		// 		conn.SetDeadline(time.Now().Add(time.Duration(maxTime) * 2))
+		// 		return conn, nil
+		// 	},
+		// },
+		Timeout: time.Duration(maxTime) * 2,
 	}
 	var url = fmt.Sprintf("http://%s:%s/actuator/health", IP, port)
 	request, err := http.NewRequest("GET", url, nil)
@@ -196,4 +206,35 @@ func CheckHealthByLocalActuator(container *types.Container, idx int) bool {
 		return false
 	}
 	return true
+}
+
+func MarkContainerUnHealthy(container *types.Container) {
+	var IP = container.IP
+	constants.IPChanMapMutex.Lock()
+	container.Health = false
+	logger.Printf("\n[%s] [Mark Container Unhealthy] [Group(%s) IP(%s) ID(%s)]\n", time.Now().Format("2006-01-02 15:04:05"),
+		container.Group, container.IP, container.ID)
+	ch := constants.IPChanMap[IP]
+	close(ch)
+	delete(constants.IPChanMap, IP)
+	constants.IPChanMapMutex.Unlock()
+	go GatewayReplaceInstance(container)
+}
+
+func GatewayReplaceInstance(container *types.Container) {
+	var gateway = container.Gateway
+	var url = fmt.Sprintf("http://%s/zuulApi/replaceServiceInstance", gateway)
+	var replaceInfo = &types.GateWayReplaceService{
+		ServiceName:      container.Group,
+		DownInstanceHost: container.IP,
+		DownInstancePort: container.Port,
+	}
+	var requestBody, _ = json.Marshal(replaceInfo)
+	response, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
+	if err != nil || response == nil || response.StatusCode != 200 {
+		logger.Printf("\n[%s] [Gateway Replace Instance] [Gateway(%s) Group(%s) Instance(%s)] Gateway Error!\n",
+			time.Now().Format("2006-01-02 15:04:05"), gateway, container.Group, container.IP)
+	}
+	logger.Printf("\n[%s] [Gateway Replace Instance] [Gateway(%s) Group(%s) Instance(%s)] Service Down!\n",
+		time.Now().Format("2006-01-02 15:04:05"), gateway, container.Group, container.IP)
 }

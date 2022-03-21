@@ -2,6 +2,7 @@ package constants
 
 import (
 	"frdocker/types"
+	"sync"
 
 	cmap "github.com/orcaman/concurrent-map"
 )
@@ -17,3 +18,4 @@ var ServiceGroupMap = cmap.New()
 
 // 服务IP与服务监控协程通道的映射
 var IPChanMap = make(map[string]chan *types.HttpInfo)
+var IPChanMapMutex sync.Mutex

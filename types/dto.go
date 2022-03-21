@@ -19,3 +19,9 @@ type EurekaConfig struct {
 	ArrayGetWay []string
 	ArrayGroup  []string
 }
+
+type GateWayReplaceService struct {
+	ServiceName      string
+	DownInstanceHost string
+	DownInstancePort string
+}

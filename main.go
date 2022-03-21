@@ -70,7 +70,9 @@ func runRecovery(ifaceName string, confPath string) {
 		}
 		obj, _ := constants.IPServiceContainerMap.Get(currentIP)
 		var currentContainer = obj.(*types.Container)
+		constants.IPChanMapMutex.Lock()
 		if !currentContainer.Health {
+			constants.IPChanMapMutex.Unlock()
 			continue
 		}
 		var httpChan chan *types.HttpInfo
@@ -83,6 +85,7 @@ func runRecovery(ifaceName string, confPath string) {
 			httpChan <- httpInfo
 			constants.IPChanMap[currentIP] = httpChan
 		}
+		constants.IPChanMapMutex.Unlock()
 		// fmt.Printf("%s -> %s\n", srcIP, dstIP)
 		// fmt.Println(string(tcp.Payload))
 		// httpType, _ := utils.GetHttpType(tcp.Payload)
