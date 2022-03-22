@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"frdocker/constants"
+	"frdocker/settings"
 	"frdocker/types"
 	"io/ioutil"
 	"math"
@@ -95,7 +96,7 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 				Data: []float64{timeInterval},
 			}
 			ecc := TEDA(container.States[currentIdx], data)
-			var threshold = (math.Pow(constants.NSigma, 2) + 1) / float64((2 * container.States[currentIdx].K))
+			var threshold = (math.Pow(settings.NSIGMA, 2) + 1) / float64((2 * container.States[currentIdx].K))
 			var health = container.Health
 			if ecc > threshold && health {
 				health = CheckHealthByLocalActuator(container, currentIdx)
@@ -122,8 +123,8 @@ func TEDA(state *types.State, data *types.Vector) float64 {
 		state.Sigma = 0.0
 		state.Ecc = math.NaN()
 		state.K = state.K + 1
-		state.MaxTime = state.Variance.Data[0] + constants.NSigma*state.Variance.Data[0]
-		state.MinTime = state.Variance.Data[0] - constants.NSigma*state.Variance.Data[0]
+		state.MaxTime = state.Variance.Data[0] + settings.NSIGMA*state.Variance.Data[0]
+		state.MinTime = state.Variance.Data[0] - settings.NSIGMA*state.Variance.Data[0]
 		state.Unlock()
 		return math.NaN()
 	}
@@ -144,8 +145,8 @@ func TEDA(state *types.State, data *types.Vector) float64 {
 	state.Ecc = normalized_ecc
 	state.K = state.K + 1
 	copy(state.Variance.Data, variance.Data)
-	state.MaxTime = state.Variance.Data[0] + constants.NSigma*math.Sqrt(state.Sigma)
-	state.MinTime = state.Variance.Data[0] - constants.NSigma*math.Sqrt(state.Sigma)
+	state.MaxTime = state.Variance.Data[0] + settings.NSIGMA*math.Sqrt(state.Sigma)
+	state.MinTime = state.Variance.Data[0] - settings.NSIGMA*math.Sqrt(state.Sigma)
 	return normalized_ecc
 }
 

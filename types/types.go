@@ -7,37 +7,37 @@ import (
 
 // 微服务/容器
 type Container struct {
-	IP      string
-	Port    string
-	Group   string
-	Gateway string
-	Leaf    bool
-	Health  bool
-	ID      string
-	Name    string
-	States  []*State
+	IP      string   `bson:"ip"`
+	Port    string   `bson:"port"`
+	Group   string   `bson:"group"`
+	Gateway string   `bson:"gateway"`
+	Leaf    bool     `bson:"leaf"`
+	Health  bool     `bson:"health"`
+	ID      string   `bson:"id"`
+	Name    string   `bson:"name"`
+	States  []*State `bson:"state"`
 }
 
 // 微服务状态
 type State struct {
 	sync.RWMutex
-	Id       *StateId
-	Ecc      float64
-	Variance *Vector
-	Sigma    float64
-	K        int64
-	MaxTime  float64
-	MinTime  float64
+	Id       *StateId `bson:"id"`
+	Ecc      float64  `bson:"ecc"`
+	Variance *Vector  `bson:"variance"`
+	Sigma    float64  `bson:"sigma"`
+	K        int64    `bson:"k"`
+	MaxTime  float64  `bson:"maxTime"`
+	MinTime  float64  `bson:"minTime"`
 }
 
 type StateId struct {
-	StartWith *StateEndpointEvent
-	EndWith   *StateEndpointEvent
+	StartWith *StateEndpointEvent `bson:"startWith"`
+	EndWith   *StateEndpointEvent `bson:"endwith"`
 }
 
 type StateEndpointEvent struct {
-	IP       string
-	HttpType string
+	IP       string `bson:"ip"`
+	HttpType string `bson:"httpType"`
 }
 
 // 服务发现配置: 来自Eureka Server或配置文件
