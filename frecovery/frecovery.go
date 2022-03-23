@@ -13,6 +13,7 @@ import (
 
 func RunFrecovery(ifaceName string, confPath string) {
 	log.Println("Fr-Docker Started!")
+	defer log.Println("Fr-Docker Stopped!")
 	var err error
 	InitContainers(ifaceName, confPath)
 	go SetupCloseHandler(ifaceName)
@@ -21,9 +22,6 @@ func RunFrecovery(ifaceName string, confPath string) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer func() {
-		log.Println("Fr-Docker Stopped!")
-	}()
 	if err = handler.SetBPFFilter(filter); err != nil {
 		log.Fatalln(err)
 	}
