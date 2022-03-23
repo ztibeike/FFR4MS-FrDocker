@@ -1,4 +1,4 @@
-package utils
+package frecovery
 
 import (
 	"context"
@@ -6,13 +6,14 @@ import (
 	"frdocker/constants"
 	"frdocker/models"
 	"frdocker/types"
+	"frdocker/utils"
 	"log"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func InitHandler(ifaceName, confPath string) {
+func InitContainers(ifaceName, confPath string) {
 	filter := bson.D{
 		{Key: "name", Value: ifaceName},
 	}
@@ -56,9 +57,9 @@ func InitFromDataBase(networkId string) {
 func InitFromConfiguration(confPath string) {
 	var containers []*types.Container
 	if strings.HasPrefix(confPath, "http") {
-		containers = GetConfigFromEureka(confPath)
+		containers = utils.GetConfigFromEureka(confPath)
 	} else {
 		log.Fatalln(errors.New("do not support file-config yet"))
 	}
-	GetServiceContainers(containers)
+	utils.GetServiceContainers(containers)
 }

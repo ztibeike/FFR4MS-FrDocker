@@ -1,9 +1,10 @@
-package utils
+package frecovery
 
 import (
 	"frdocker/constants"
 	"frdocker/models"
 	"frdocker/types"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -16,16 +17,19 @@ func SetupCloseHandler(ifaceName string) {
 	sigalChan := make(chan os.Signal, 1)
 	signal.Notify(sigalChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigalChan
+	log.Printf("Closing All Channels......\n")
 	for IP, ch := range constants.IPChanMap {
 		close(ch)
 		delete(constants.IPChanMap, IP)
 	}
+	log.Printf("Saving All Containers Info & States......\n")
 	var network *models.NetWork
 	filter := bson.D{
 		{Key: "name", Value: ifaceName},
 	}
 	networkMgo.FindOne(filter).Decode(&network)
 	if network == nil {
+		network = &models.NetWork{}
 		network.Name = ifaceName
 		id := uuid.New()
 		network.Id = id.String()
@@ -54,6 +58,6 @@ func SetupCloseHandler(ifaceName string) {
 			_ = containerMgo.ReplaceOne(filter, dbContainer)
 		}
 	}
-
-	os.Exit(1)
+	handler.Close()
+	log.Printf("Stop capturing packets on interface: %s\n", ifaceName)
 }

@@ -50,24 +50,6 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 	var httpInfo_end *types.HttpInfo = nil
 	// var timeOutIdx = -1
 	for httpInfo := range httpChan {
-		// var now = time.Now().Format("2006-01-02 15:04:05")
-		// var otherIP string
-		// var action = make([]string, 2)
-		// if container.IP != httpInfo.SrcIP {
-		// 	otherIP = httpInfo.SrcIP
-		// 	action[0] = "Recieve"
-		// 	action[1] = "From"
-		// } else {
-		// 	otherIP = httpInfo.DstIP
-		// 	action[0] = "Send"
-		// 	action[1] = "to"
-		// }
-		// obj, _ := constants.IPAllMSMap.Get(otherIP)
-		// var ms = obj.(string)
-		// if container.Group == "service-a" {
-		// 	fmt.Printf("[Checking State] [%s] [TraceId(%s)] Group(%s) IP(%s) ID(%s) %s HTTP %s %s %s(%s)\n",
-		// 		now, traceId, container.Group, container.IP, container.ID[:10], action[0], httpInfo.Type, action[1], ms, otherIP)
-		// }
 		if httpInfo_start == nil {
 			httpInfo_start = httpInfo
 			if len(container.States) <= idx {
