@@ -70,4 +70,5 @@ type HttpInfo struct {
 type ServiceGroup struct {
 	Gateway  string
 	Services []string
+	Leaf     bool
 }

@@ -57,6 +57,7 @@ func GetConfigFromEureka(confPath string) []*types.Container {
 		obj, _ = constants.ServiceGroupMap.Get(resp.ArrayGroup[idx])
 		serviceGroup := obj.(*types.ServiceGroup)
 		serviceGroup.Services = append(serviceGroup.Services, service[:colon])
+		serviceGroup.Leaf = (serviceInfo.Leaf == 1)
 		container := &types.Container{
 			IP:      service[:colon],
 			Port:    service[colon+1:],

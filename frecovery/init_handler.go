@@ -44,6 +44,7 @@ func InitFromDataBase(networkId string) {
 			serviceGroup := &types.ServiceGroup{
 				Gateway:  container.Gateway,
 				Services: []string{container.IP},
+				Leaf:     container.Leaf,
 			}
 			constants.ServiceGroupMap.Set(container.Group, serviceGroup)
 		} else {

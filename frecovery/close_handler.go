@@ -58,6 +58,6 @@ func SetupCloseHandler(ifaceName string) {
 			_ = containerMgo.ReplaceOne(filter, dbContainer)
 		}
 	}
-	handler.Close()
+	pcapHandler.Close()
 	log.Printf("Stop capturing packets on interface: %s\n", ifaceName)
 }

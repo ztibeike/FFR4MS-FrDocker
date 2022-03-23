@@ -2,6 +2,7 @@ package frecovery
 
 import (
 	"frdocker/constants"
+	"frdocker/handler"
 	"frdocker/types"
 	"frdocker/utils"
 	"log"
@@ -17,16 +18,17 @@ func RunFrecovery(ifaceName string, confPath string) {
 	var err error
 	InitContainers(ifaceName, confPath)
 	go SetupCloseHandler(ifaceName)
-	handler, err = pcap.OpenLive(ifaceName, 1600, true, pcap.BlockForever)
+	go handler.HttpHandler()
+	pcapHandler, err = pcap.OpenLive(ifaceName, 1600, true, pcap.BlockForever)
 	var filter = "tcp"
 	if err != nil {
 		log.Fatalln(err)
 	}
-	if err = handler.SetBPFFilter(filter); err != nil {
+	if err = pcapHandler.SetBPFFilter(filter); err != nil {
 		log.Fatalln(err)
 	}
 	log.Printf("Start Capturing Packets on Interface: %s\n", ifaceName)
-	packetSource := gopacket.NewPacketSource(handler, handler.LinkType())
+	packetSource := gopacket.NewPacketSource(pcapHandler, pcapHandler.LinkType())
 	packets := packetSource.Packets()
 
 	// var IPChanMap = make(map[string]chan *types.HttpInfo)
