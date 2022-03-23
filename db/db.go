@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// TrainerModel
 type Mgo struct {
 	collection *mongo.Collection
 }
@@ -44,12 +44,8 @@ func (m *Mgo) InsertMany(documents []interface{}) (insertManyResult *mongo.Inser
 }
 
 // 查询单个
-func (m *Mgo) FindOne(key string, value interface{}) *mongo.SingleResult {
-	filter := bson.D{{Key: key, Value: value}}
+func (m *Mgo) FindOne(filter interface{}) *mongo.SingleResult {
 	singleResult := m.collection.FindOne(context.TODO(), filter)
-	if singleResult != nil {
-		fmt.Println(singleResult)
-	}
 	return singleResult
 }
 
@@ -80,6 +76,16 @@ func (m *Mgo) FindAll(Skip, Limit int64, sort int) *mongo.Cursor {
 	}
 
 	return cur
+}
+
+// 查询多个
+func (m *Mgo) FindMany(filter interface{}) *mongo.Cursor {
+	cursor, err := m.collection.Find(context.TODO(), filter)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return cursor
 }
 
 // 获取集合创建时间和编号
@@ -117,6 +123,22 @@ func (m *Mgo) DeleteMany(key string, value interface{}) int64 {
 func (m *Mgo) UpdateOne(key string, value interface{}, update interface{}) (updateResult *mongo.UpdateResult) {
 	filter := bson.D{{Key: key, Value: value}}
 	updateResult, err := m.collection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return updateResult
+}
+
+func (m *Mgo) UpdateMany(filter primitive.D, update interface{}) (updateResult *mongo.UpdateResult) {
+	updateResult, err := m.collection.UpdateMany(context.TODO(), filter, update)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return updateResult
+}
+
+func (m *Mgo) ReplaceOne(filter, replace interface{}) (updateResult *mongo.UpdateResult) {
+	updateResult, err := m.collection.ReplaceOne(context.TODO(), filter, replace)
 	if err != nil {
 		log.Fatal(err)
 	}

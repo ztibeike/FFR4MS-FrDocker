@@ -1,13 +1,11 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"frdocker/constants"
 	"frdocker/types"
 	"frdocker/utils"
 	"log"
-	"strings"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -19,16 +17,8 @@ func runRecovery(ifaceName string, confPath string) {
 	var err error
 	var handler *pcap.Handle
 	var filter = "tcp"
-	var containers []*types.Container
-	if strings.HasPrefix(confPath, "http") {
-		containers = utils.GetConfigFromEureka(confPath)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	} else {
-		log.Fatalln(errors.New("do not support file-config yet"))
-	}
-	utils.GetServiceContainers(containers)
+	utils.InitHandler(ifaceName, confPath)
+	go utils.SetupCloseHandler(ifaceName)
 	handler, err = pcap.OpenLive(ifaceName, 1600, true, pcap.BlockForever)
 	if err != nil {
 		log.Fatalln(err)
@@ -41,7 +31,6 @@ func runRecovery(ifaceName string, confPath string) {
 	packetSource := gopacket.NewPacketSource(handler, handler.LinkType())
 	packets := packetSource.Packets()
 
-	go utils.SetupCloseHandler()
 	// var IPChanMap = make(map[string]chan *types.HttpInfo)
 
 	for packet := range packets {
