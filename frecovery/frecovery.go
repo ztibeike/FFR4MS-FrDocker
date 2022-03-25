@@ -2,10 +2,10 @@ package frecovery
 
 import (
 	"frdocker/constants"
-	"frdocker/handler"
 	"frdocker/types"
 	"frdocker/utils"
 	"log"
+	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -13,12 +13,11 @@ import (
 )
 
 func RunFrecovery(ifaceName string, confPath string) {
-	log.Println("Fr-Docker Started!")
-	defer log.Println("Fr-Docker Stopped!")
+	logger.Printf("[%s] Fr-Docker Started!\n", time.Now().Format("2006-01-02 15:04:05"))
+	defer logger.Printf("[%s] Fr-Docker Stopped!\n", time.Now().Format("2006-01-02 15:04:05"))
 	var err error
 	InitContainers(ifaceName, confPath)
 	go SetupCloseHandler(ifaceName)
-	go handler.HttpHandler()
 	pcapHandler, err = pcap.OpenLive(ifaceName, 1600, true, pcap.BlockForever)
 	var filter = "tcp"
 	if err != nil {
@@ -27,7 +26,7 @@ func RunFrecovery(ifaceName string, confPath string) {
 	if err = pcapHandler.SetBPFFilter(filter); err != nil {
 		log.Fatalln(err)
 	}
-	log.Printf("Start Capturing Packets on Interface: %s\n", ifaceName)
+	logger.Printf("[%s] Start Capturing Packets on Interface: %s\n", time.Now().Format("2006-01-02 15:04:05"), ifaceName)
 	packetSource := gopacket.NewPacketSource(pcapHandler, pcapHandler.LinkType())
 	packets := packetSource.Packets()
 
@@ -71,7 +70,7 @@ func RunFrecovery(ifaceName string, confPath string) {
 			httpChan <- httpInfo
 		} else {
 			httpChan = make(chan *types.HttpInfo)
-			go utils.StateMonitor(currentIP, httpChan)
+			go StateMonitor(currentIP, httpChan)
 			httpChan <- httpInfo
 			constants.IPChanMap[currentIP] = httpChan
 		}

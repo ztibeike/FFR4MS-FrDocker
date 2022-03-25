@@ -25,9 +25,3 @@ type GateWayReplaceService struct {
 	DownInstanceHost string
 	DownInstancePort string
 }
-
-type AddContainerDTO struct {
-	ServiceGroup string `json:"serviceGroup"`
-	ServiceIP    string `json:"serviceIP"`
-	ServicePort  string `json:"servicePort"`
-}

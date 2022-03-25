@@ -3,11 +3,13 @@ package db
 var (
 	NetworkMgo   *Mgo
 	ContainerMgo *Mgo
+	UserMongo    *Mgo
 )
 
 func init() {
 	NetworkMgo = NewMgo("network")
 	ContainerMgo = NewMgo("container")
+	UserMongo = NewMgo("user")
 }
 
 func GetNetworkMgo() *Mgo {
@@ -22,4 +24,11 @@ func GetContainerMgo() *Mgo {
 		ContainerMgo = NewMgo("container")
 	}
 	return ContainerMgo
+}
+
+func GetUserMgo() *Mgo {
+	if UserMongo == nil {
+		UserMongo = NewMgo("user")
+	}
+	return UserMongo
 }

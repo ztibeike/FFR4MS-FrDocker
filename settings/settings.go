@@ -1,4 +1,4 @@
 package settings
 
 // http handler port
-const HTTP_HANDLER_PORT = "11111"
+const WEB_HANDLER_PORT = "11111"
