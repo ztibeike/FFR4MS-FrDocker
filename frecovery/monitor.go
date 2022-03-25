@@ -49,6 +49,7 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 	var httpInfo_start *types.HttpInfo = nil
 	var httpInfo_end *types.HttpInfo = nil
 	// var timeOutIdx = -1
+	var checkTimeExceedMap = make(map[int]chan float64)
 	for httpInfo := range httpChan {
 		if httpInfo_start == nil {
 			httpInfo_start = httpInfo
@@ -64,16 +65,22 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 					Variance: &types.Vector{},
 				})
 			}
-			go CheckTimeExceedNotEnd(container, traceId, idx, &idx)
+			ch := make(chan float64, 1)
+			checkTimeExceedMap[idx] = ch
+			go CheckTimeExceedNotEnd(container, traceId, idx, ch)
 		} else {
 			httpInfo_end = httpInfo
 			currentIdx := idx
 			idx += 1
-			container.States[currentIdx].Id.EndWith = &types.StateEndpointEvent{
-				IP:       httpInfo_end.DstIP,
-				HttpType: httpInfo_end.Type,
+			if container.States[currentIdx].Id.EndWith == nil {
+				container.States[currentIdx].Id.EndWith = &types.StateEndpointEvent{
+					IP:       httpInfo_end.DstIP,
+					HttpType: httpInfo_end.Type,
+				}
 			}
 			timeInterval := math.Abs(float64(httpInfo_end.Timestamp.Nanosecond() - httpInfo_start.Timestamp.Nanosecond()))
+			ch := checkTimeExceedMap[currentIdx]
+			ch <- timeInterval
 			data := &types.Vector{
 				Data: []float64{timeInterval},
 			}
@@ -93,7 +100,10 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 			httpInfo_start = nil
 			httpInfo_end = nil
 		}
-
+	}
+	for idx, ch := range checkTimeExceedMap {
+		close(ch)
+		delete(checkTimeExceedMap, idx)
 	}
 }
 
@@ -132,42 +142,62 @@ func TEDA(state *types.State, data *types.Vector) float64 {
 	return normalized_ecc
 }
 
-func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentIdx int, idx *int) {
+func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentIdx int, channel chan float64) {
 	state := container.States[currentIdx]
 	if state.K == 1 {
 		return
 	}
-	t := time.Duration(state.MaxTime) + 1
-	time.Sleep(t)
-	if *idx == currentIdx {
-		health := CheckHealthByLocalActuator(container, currentIdx)
-		if !health {
-			MarkContainerUnHealthy(container)
+	maxTime := state.MaxTime
+	timeOutChan := make(chan int, 1)
+	// 设置超时时间，避免因服务崩溃导致本状态一直未结束，没有计算离心率和状态转变时间，从而导致无法检测出服务故障
+	go func() {
+		time.Sleep(time.Duration(maxTime))
+		timeOutChan <- 1
+		close(timeOutChan)
+	}()
+	/*	两个通道：
+			1. channel: 由上层goroutine传递，如果从通道中监听到消息，代表本状态结束了，收到的消息未状态转变时间，计算是否超时，如果超时则进行本地健康检查进行最终判断
+			2. timeOutChannel: 超时通道，由下层goroutine传递消息，如果从通道中监听到消息，代表在该状态的最大转变时间内仍未结束该状态，则存在超时异常，进行本地健康检查
+		两个通道任选其一执行对应的处理，取决于哪个通道最先收到消息
+	*/
+	for {
+		select {
+		case t, ok := <-channel:
+			{
+				if !ok {
+					// 通道关闭
+					return
+				}
+				if t > maxTime {
+					health := CheckHealthByLocalActuator(container, currentIdx)
+					logger.Printf("\n[%s] [Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
+						time.Now().Format("2006-01-02 15:04:05"), traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(state.MaxTime), health)
+					if !health {
+						MarkContainerUnHealthy(container)
+					}
+				}
+				return
+			}
+		case <-timeOutChan:
+			{
+				health := CheckHealthByLocalActuator(container, currentIdx)
+				logger.Printf("\n[%s] [Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
+					time.Now().Format("2006-01-02 15:04:05"), traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(state.MaxTime), health)
+				if !health {
+					MarkContainerUnHealthy(container)
+				}
+				return
+			}
 		}
-		logger.Printf("\n[%s] [Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
-			time.Now().Format("2006-01-02 15:04:05"), traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(state.MaxTime), health)
+
 	}
 }
 
 func CheckHealthByLocalActuator(container *types.Container, idx int) bool {
 	var IP = container.IP
 	var port = container.Port
-	var maxTime = container.States[idx].MaxTime
 	var client = &http.Client{
-
-		// probably cause timeout
-
-		// Transport: &http.Transport{
-		// 	Dial: func(network, addr string) (net.Conn, error) {
-		// 		conn, err := net.DialTimeout(network, addr, time.Duration(maxTime)*2)
-		// 		if err != nil {
-		// 			return nil, err
-		// 		}
-		// 		conn.SetDeadline(time.Now().Add(time.Duration(maxTime) * 2))
-		// 		return conn, nil
-		// 	},
-		// },
-		Timeout: time.Duration(maxTime) * 2,
+		Timeout: settings.LOCAL_HEALTH_CHECK_TIME_OUT * time.Millisecond,
 	}
 	var url = fmt.Sprintf("http://%s:%s/actuator/health", IP, port)
 	request, err := http.NewRequest("GET", url, nil)
@@ -180,10 +210,7 @@ func CheckHealthByLocalActuator(container *types.Container, idx int) bool {
 	}
 	defer response.Body.Close()
 	var resp = &types.ServiceActuatorHealth{}
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return false
-	}
+	body, _ := ioutil.ReadAll(response.Body)
 	err = json.Unmarshal(body, resp)
 	if err != nil || resp.Status != "UP" {
 		return false
