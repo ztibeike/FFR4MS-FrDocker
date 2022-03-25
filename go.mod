@@ -3,6 +3,7 @@ module frdocker
 go 1.17
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/docker v20.10.12+incompatible
 	github.com/gin-gonic/gin v1.7.7
 	github.com/google/gopacket v1.1.19

@@ -26,7 +26,7 @@ func RegisterController(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "Username already exists!", nil))
 		return
 	}
-	user.Role = "ADMIN"
+	user.Role = "USER"
 	cryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	user.Password = string(cryptedPassword)
 	user.Id = uuid.New().String()

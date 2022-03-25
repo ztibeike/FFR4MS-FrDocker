@@ -4,6 +4,7 @@ import (
 	"frdocker/db"
 	"frdocker/web/entity"
 	"frdocker/web/entity/R"
+	"frdocker/web/service/token"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -29,5 +30,10 @@ func LoginController(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "Username or password incorrect!", nil))
 		return
 	}
-	c.JSON(http.StatusOK, R.OK(nil))
+	token, err := token.GenerateToken(expectUser.Id, expectUser.Role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, R.Error(http.StatusInternalServerError, "Login failed caused by service error, try again later!", nil))
+		return
+	}
+	c.JSON(http.StatusOK, R.OK(gin.H{"token": token}))
 }
