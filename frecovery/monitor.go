@@ -148,17 +148,23 @@ func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentId
 		return
 	}
 	maxTime := state.MaxTime
-	timeOutChan := make(chan int, 1)
+	timeoutChan := make(chan int, 1)
 	// 设置超时时间，避免因服务崩溃导致本状态一直未结束，没有计算离心率和状态转变时间，从而导致无法检测出服务故障
 	go func() {
 		time.Sleep(time.Duration(maxTime))
-		timeOutChan <- 1
-		close(timeOutChan)
+		timeoutChan <- 1
+		close(timeoutChan)
 	}()
 	/*	两个通道：
 			1. channel: 由上层goroutine传递，如果从通道中监听到消息，代表本状态结束了，收到的消息未状态转变时间，计算是否超时，如果超时则进行本地健康检查进行最终判断
 			2. timeOutChannel: 超时通道，由下层goroutine传递消息，如果从通道中监听到消息，代表在该状态的最大转变时间内仍未结束该状态，则存在超时异常，进行本地健康检查
 		两个通道任选其一执行对应的处理，取决于哪个通道最先收到消息
+
+		为什么要这样写：首先考虑到两种情况：
+			1. 状态成功结束但超时
+			2. 状态一直不结束
+		第一种情况只需在状态结束后计算离心率或者检测超时即可判断异常
+		第二种情况由于状态不结束因此无法计算离心率，只能通过在超过最大状态转变时间后进行本地健康检查来判断异常，因此设置了一个超时后就会收到消息的通道timeoutChan
 	*/
 	for {
 		select {
@@ -178,7 +184,7 @@ func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentId
 				}
 				return
 			}
-		case <-timeOutChan:
+		case <-timeoutChan:
 			{
 				health := CheckHealthByLocalActuator(container, currentIdx)
 				logger.Printf("\n[%s] [Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
