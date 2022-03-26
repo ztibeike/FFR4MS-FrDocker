@@ -18,7 +18,7 @@ func StateMonitor(IP string, httpChan chan *types.HttpInfo) {
 	// var traceIdStateMap = make(map[string]types.State)
 	obj, _ := constants.IPServiceContainerMap.Get(IP)
 	var container = obj.(*types.Container)
-	logger.Info("\n[Monitoring Container] Group(%s) IP(%s) ID(%s)\n", container.Group, container.IP, container.ID[:10])
+	logger.Info("[Monitoring Container] Group(%s) IP(%s) ID(%s)\n", container.Group, container.IP, container.ID[:10])
 	var TraceMap = make(map[string]chan *types.HttpInfo) // TraceId为key，每个TraceId开启一个go routine
 	for httpInfo := range httpChan {
 		var channel chan *types.HttpInfo
@@ -93,7 +93,7 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 					MarkContainerUnHealthy(container)
 				}
 			}
-			logger.Trace("\n[Checking State] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) TimeInterval(%dns) Eccentricity(%f) MinTime(%d) MaxTime(%d) Health(%t)]\n",
+			logger.Trace("[Checking State] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) TimeInterval(%dns) Eccentricity(%f) MinTime(%d) MaxTime(%d) Health(%t)]\n",
 				traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(timeInterval), ecc,
 				int(container.States[currentIdx].MinTime), int(container.States[currentIdx].MaxTime), health)
 			httpInfo_start = nil
@@ -175,7 +175,7 @@ func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentId
 				}
 				if t > maxTime {
 					health := CheckHealthByLocalActuator(container, currentIdx)
-					logger.Warn("\n[Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
+					logger.Warn("[Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
 						traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(state.MaxTime), health)
 					if !health {
 						MarkContainerUnHealthy(container)
@@ -186,7 +186,7 @@ func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentId
 		case <-timeoutChan:
 			{
 				health := CheckHealthByLocalActuator(container, currentIdx)
-				logger.Warn("\n[Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
+				logger.Warn("[Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
 					traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(state.MaxTime), health)
 				if !health {
 					MarkContainerUnHealthy(container)
@@ -227,7 +227,7 @@ func MarkContainerUnHealthy(container *types.Container) {
 	var IP = container.IP
 	constants.IPChanMapMutex.Lock()
 	container.Health = false
-	logger.Error("\n[Mark Container Unhealthy] [Group(%s) IP(%s) ID(%s)]\n", container.Group, container.IP, container.ID)
+	logger.Error("[Mark Container Unhealthy] [Group(%s) IP(%s) ID(%s)]\n", container.Group, container.IP, container.ID)
 	ch := constants.IPChanMap[IP]
 	close(ch)
 	delete(constants.IPChanMap, IP)
@@ -246,9 +246,9 @@ func GatewayReplaceInstance(container *types.Container) {
 	var requestBody, _ = json.Marshal(replaceInfo)
 	response, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil || response == nil || response.StatusCode != 200 {
-		logger.Info("\n[Gateway Replace Instance] [Gateway(%s) Group(%s) Instance(%s)] Gateway Error!\n",
+		logger.Info("[Gateway Replace Instance] [Gateway(%s) Group(%s) Instance(%s)] Gateway Error!\n",
 			gateway, container.Group, container.IP)
 	}
-	logger.Info("\n[Gateway Replace Instance] [Gateway(%s) Group(%s) Instance(%s)] Service Down!\n",
+	logger.Info("[Gateway Replace Instance] [Gateway(%s) Group(%s) Instance(%s)] Service Down!\n",
 		gateway, container.Group, container.IP)
 }

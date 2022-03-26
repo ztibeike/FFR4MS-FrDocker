@@ -27,7 +27,7 @@ func SetupCloseHandler(ifaceName string) {
 
 func CloseChannels(ifaceName string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	logger.Info("\nClosing All Channels......\n")
+	logger.Info("Closing All Channels......\n")
 	for IP, ch := range constants.IPChanMap {
 		close(ch)
 		delete(constants.IPChanMap, IP)
@@ -38,7 +38,7 @@ func CloseChannels(ifaceName string, wg *sync.WaitGroup) {
 
 func SaveContainerInfo(ifaceName string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	logger.Info("\nSaving All Containers Info & States......\n")
+	logger.Info("Saving All Containers Info & States......\n")
 	var network *models.NetWork
 	filter := bson.D{
 		{Key: "name", Value: ifaceName},

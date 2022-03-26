@@ -20,7 +20,7 @@ func Info(args ...interface{}) {
 		return
 	}
 	var output string
-	c := color.New(color.FgCyan)
+	c := color.New(color.FgHiBlue)
 	if len(args) == 1 {
 		output = c.Sprintf(args[0].(string))
 	} else {
@@ -31,7 +31,7 @@ func Info(args ...interface{}) {
 
 func Infoln(args ...interface{}) {
 	var coloredArgs []interface{}
-	c := color.New(color.FgBlue)
+	c := color.New(color.FgHiBlue)
 	for _, arg := range args {
 		coloredArgs = append(coloredArgs, c.Sprintf("%v", arg))
 	}
@@ -43,7 +43,7 @@ func Trace(args ...interface{}) {
 		return
 	}
 	var output string
-	c := color.New(color.FgHiBlue)
+	c := color.New(color.FgCyan)
 	if len(args) == 1 {
 		output = c.Sprintf(args[0].(string))
 	} else {
@@ -68,11 +68,11 @@ func Error(args ...interface{}) {
 
 func Errorln(args ...interface{}) {
 	var coloredArgs []interface{}
-	c := color.New(color.FgHiRed)
+	c := color.New(color.FgRed)
 	for _, arg := range args {
 		coloredArgs = append(coloredArgs, c.Sprintf("%v", arg))
 	}
-	log.Errorln(coloredArgs)
+	log.Errorln(coloredArgs...)
 }
 
 func Fatal(args ...interface{}) {
@@ -95,7 +95,7 @@ func Fatalln(args ...interface{}) {
 	for _, arg := range args {
 		coloredArgs = append(coloredArgs, c.Sprintf("%v", arg))
 	}
-	log.Fatalln(coloredArgs)
+	log.Fatalln(coloredArgs...)
 }
 
 func Warn(args ...interface{}) {
@@ -110,4 +110,13 @@ func Warn(args ...interface{}) {
 		output = c.Sprintf(args[0].(string), args[1:]...)
 	}
 	log.Warnf(output)
+}
+
+func Warnln(args ...interface{}) {
+	var coloredArgs []interface{}
+	c := color.New(color.FgYellow)
+	for _, arg := range args {
+		coloredArgs = append(coloredArgs, c.Sprintf("%v", arg))
+	}
+	log.Warnln(coloredArgs...)
 }

@@ -2,7 +2,6 @@ package frecovery
 
 import (
 	"context"
-	"errors"
 	"frdocker/constants"
 	"frdocker/models"
 	"frdocker/types"
@@ -60,7 +59,7 @@ func InitFromConfiguration(confPath string) {
 	if strings.HasPrefix(confPath, "http") {
 		containers = utils.GetConfigFromEureka(confPath)
 	} else {
-		logger.Fatalln(errors.New("Do not Support File-config Yet!"))
+		logger.Fatalln("Do not Support File-config Yet!")
 	}
 	utils.GetServiceContainers(containers)
 }
