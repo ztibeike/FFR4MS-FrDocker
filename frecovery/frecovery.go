@@ -4,8 +4,8 @@ import (
 	"frdocker/constants"
 	"frdocker/types"
 	"frdocker/utils"
-	"log"
-	"time"
+
+	"frdocker/utils/logger"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -13,20 +13,20 @@ import (
 )
 
 func RunFrecovery(ifaceName string, confPath string) {
-	logger.Printf("[%s] Fr-Docker Started!\n", time.Now().Format("2006-01-02 15:04:05"))
-	defer logger.Printf("[%s] Fr-Docker Stopped!\n", time.Now().Format("2006-01-02 15:04:05"))
+	logger.Info("Fr-Docker Started!\n")
+	defer logger.Info("Fr-Docker Stopped!\n")
 	var err error
 	InitContainers(ifaceName, confPath)
 	go SetupCloseHandler(ifaceName)
 	pcapHandler, err = pcap.OpenLive(ifaceName, 1600, true, pcap.BlockForever)
 	var filter = "tcp"
 	if err != nil {
-		log.Fatalln(err)
+		logger.Fatalln(err)
 	}
 	if err = pcapHandler.SetBPFFilter(filter); err != nil {
-		log.Fatalln(err)
+		logger.Fatalln(err)
 	}
-	logger.Printf("[%s] Start Capturing Packets on Interface: %s\n", time.Now().Format("2006-01-02 15:04:05"), ifaceName)
+	logger.Info("Start Capturing Packets on Interface: %s\n", ifaceName)
 	packetSource := gopacket.NewPacketSource(pcapHandler, pcapHandler.LinkType())
 	packets := packetSource.Packets()
 
@@ -48,7 +48,7 @@ func RunFrecovery(ifaceName string, confPath string) {
 		}
 		var httpInfo *types.HttpInfo
 		if httpInfo, err = utils.GetHttpInfo(packet, tcp); err != nil {
-			log.Println(err.Error())
+			logger.Fatalln(err)
 			continue
 		}
 		var currentIP string // 当前http应该检测的服务IP

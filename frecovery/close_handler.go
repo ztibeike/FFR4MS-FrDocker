@@ -4,11 +4,11 @@ import (
 	"frdocker/constants"
 	"frdocker/models"
 	"frdocker/types"
+	"frdocker/utils/logger"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
@@ -16,7 +16,7 @@ import (
 
 func SetupCloseHandler(ifaceName string) {
 	sigalChan := make(chan os.Signal, 1)
-	signal.Notify(sigalChan, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGPIPE, syscall.SIGABRT, syscall.SIGQUIT)
 	<-sigalChan
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -27,18 +27,18 @@ func SetupCloseHandler(ifaceName string) {
 
 func CloseChannels(ifaceName string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	logger.Printf("\n[%s] Closing All Channels......\n", time.Now().Format("2006-01-02 15:04:05"))
+	logger.Info("\nClosing All Channels......\n")
 	for IP, ch := range constants.IPChanMap {
 		close(ch)
 		delete(constants.IPChanMap, IP)
 	}
 	pcapHandler.Close()
-	logger.Printf("[%s] Stop capturing packets on interface: %s\n", time.Now().Format("2006-01-02 15:04:05"), ifaceName)
+	logger.Info("Stop capturing packets on interface: %s\n", ifaceName)
 }
 
 func SaveContainerInfo(ifaceName string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	logger.Printf("\n[%s] Saving All Containers Info & States......\n", time.Now().Format("2006-01-02 15:04:05"))
+	logger.Info("\nSaving All Containers Info & States......\n")
 	var network *models.NetWork
 	filter := bson.D{
 		{Key: "name", Value: ifaceName},

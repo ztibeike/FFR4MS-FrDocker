@@ -5,8 +5,8 @@ import (
 	"errors"
 	"frdocker/constants"
 	"frdocker/types"
+	"frdocker/utils/logger"
 	"io"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -45,11 +45,11 @@ func (h *HttpStream) Run() {
 			// We must read until we see an EOF... very important!
 			return
 		} else if err != nil {
-			log.Println("Error reading stream", h.net, h.transport, ":", err)
+			logger.Errorln("Error reading stream", h.net, h.transport, ":", err)
 		} else {
 			bodyBytes := tcpreader.DiscardBytesToEOF(req.Body)
 			req.Body.Close()
-			log.Println("Received request from stream", h.net, h.transport, ":", req, "with", bodyBytes, "bytes in request body")
+			logger.Errorln("Received request from stream", h.net, h.transport, ":", req, "with", bodyBytes, "bytes in request body")
 		}
 	}
 }

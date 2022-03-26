@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"frdocker/constants"
 	"frdocker/types"
+	"frdocker/utils/logger"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -19,13 +19,13 @@ func HttpRequest(url string, method string, result interface{}) {
 		response, err = http.Post(url, "application/json", nil)
 	}
 	if err != nil {
-		log.Fatalln("bad http url: ", url)
+		logger.Fatalln("Bad Eureka URL: ", url)
 	}
 	body, _ := ioutil.ReadAll(response.Body)
 	response.Body.Close()
 	err = json.Unmarshal(body, result)
 	if err != nil {
-		log.Fatalln("bad struct")
+		logger.Fatalln("Bad Eureka Response")
 	}
 }
 

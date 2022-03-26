@@ -7,7 +7,7 @@ import (
 	"frdocker/models"
 	"frdocker/types"
 	"frdocker/utils"
-	"log"
+	"frdocker/utils/logger"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -60,7 +60,7 @@ func InitFromConfiguration(confPath string) {
 	if strings.HasPrefix(confPath, "http") {
 		containers = utils.GetConfigFromEureka(confPath)
 	} else {
-		log.Fatalln(errors.New("do not support file-config yet"))
+		logger.Fatalln(errors.New("Do not Support File-config Yet!"))
 	}
 	utils.GetServiceContainers(containers)
 }
