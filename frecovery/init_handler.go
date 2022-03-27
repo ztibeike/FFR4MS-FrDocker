@@ -21,13 +21,13 @@ func InitContainers(ifaceName, confPath string) {
 	if network == nil {
 		InitFromConfiguration(confPath)
 	} else {
-		InitFromDataBase(network.Id)
+		InitFromDataBase(ifaceName)
 	}
 }
 
-func InitFromDataBase(networkId string) {
+func InitFromDataBase(ifaceName string) {
 	filter := bson.D{
-		{Key: "networkId", Value: networkId},
+		{Key: "network", Value: ifaceName},
 	}
 	cursor := containerMgo.FindMany(filter)
 	defer cursor.Close(context.TODO())
@@ -44,6 +44,7 @@ func InitFromDataBase(networkId string) {
 				Gateway:  container.Gateway,
 				Services: []string{container.IP},
 				Leaf:     container.Leaf,
+				Entry:    container.Entry,
 			}
 			constants.ServiceGroupMap.Set(container.Group, serviceGroup)
 		} else {

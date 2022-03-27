@@ -7,6 +7,8 @@ import (
 	cmap "github.com/orcaman/concurrent-map"
 )
 
+var Network = ""
+
 // 功能微服务列表, 服务IP到服务容器详情的映射
 var IPServiceContainerMap = cmap.New()
 

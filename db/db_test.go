@@ -40,7 +40,7 @@ func TestDB(t *testing.T) {
 				MinTime:  1.0,
 			}},
 		},
-		NetworkId: "23233",
+		Network: "23233",
 	}
 	// ContainerMgo.InsertOne(container)
 	// container = &models.Container{}

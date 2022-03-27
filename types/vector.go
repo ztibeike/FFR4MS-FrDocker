@@ -6,7 +6,7 @@ import (
 )
 
 type Vector struct {
-	Data []float64
+	Data []float64 `bson:"data" json:"data"`
 }
 
 func NewVector(data []float64) *Vector {

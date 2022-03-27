@@ -3,6 +3,7 @@ package router
 import (
 	"frdocker/settings"
 	"frdocker/web/controller/command"
+	"frdocker/web/controller/container"
 	"frdocker/web/controller/user"
 	"frdocker/web/filter"
 
@@ -15,5 +16,6 @@ func SetupRouter() *gin.Engine {
 	r.Use(filter.UserAuthFilter())
 	command.RegisterRouter(r)
 	user.RegisterRouter(r)
+	container.RegisterRouter(r)
 	return r
 }

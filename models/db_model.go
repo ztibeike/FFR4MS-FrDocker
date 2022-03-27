@@ -9,5 +9,39 @@ type NetWork struct {
 
 type Container struct {
 	Container *types.Container `bson:"container"`
-	NetworkId string           `bson:"networkId"`
+	Network   string           `bson:"network"`
+}
+
+type ContainerTraffic struct {
+	Network string     `bson:"network"`
+	IP      string     `bson:"ip"`
+	Port    string     `bson:"port"`
+	Group   string     `bson:"group"`
+	Entry   bool       `bson:"entry"`
+	Traffic []*Traffic `bson:"traffic"`
+}
+
+type Traffic struct {
+	Year   int   `bson:"year" json:"year"`
+	Month  int   `bson:"month" json:"month"`
+	Day    int   `bson:"day" json:"day"`
+	Hour   int   `bson:"hour" json:"hour"`
+	Minute int   `bson:"minute" json:"minute"`
+	K      int64 `bson:"k" json:"k"`
+	Number int64 `bson:"number" json:"number"`
+}
+
+// for sort
+type ContainerTrafficArray []*ContainerTraffic
+
+func (c ContainerTrafficArray) Len() int {
+	return len(c)
+}
+
+func (c ContainerTrafficArray) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
+}
+
+func (c ContainerTrafficArray) Less(i, j int) bool {
+	return len(c[i].Traffic) > len(c[j].Traffic)
 }

@@ -12,3 +12,4 @@ var pcapHandler *pcap.Handle
 
 var containerMgo = db.GetContainerMgo()
 var networkMgo = db.GetNetworkMgo()
+var trafficMgo = db.GetTrafficMgo()

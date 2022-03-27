@@ -4,12 +4,14 @@ var (
 	NetworkMgo   *Mgo
 	ContainerMgo *Mgo
 	UserMongo    *Mgo
+	TrafficMgo   *Mgo
 )
 
 func init() {
 	NetworkMgo = NewMgo("network")
 	ContainerMgo = NewMgo("container")
 	UserMongo = NewMgo("user")
+	TrafficMgo = NewMgo("traffic")
 }
 
 func GetNetworkMgo() *Mgo {
@@ -31,4 +33,11 @@ func GetUserMgo() *Mgo {
 		UserMongo = NewMgo("user")
 	}
 	return UserMongo
+}
+
+func GetTrafficMgo() *Mgo {
+	if TrafficMgo == nil {
+		TrafficMgo = NewMgo("traffic")
+	}
+	return TrafficMgo
 }

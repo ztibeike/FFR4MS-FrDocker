@@ -4,6 +4,8 @@ import (
 	"frdocker/constants"
 	"frdocker/types"
 	"frdocker/utils"
+	"strings"
+	"sync"
 
 	"frdocker/utils/logger"
 
@@ -15,9 +17,13 @@ import (
 func RunFrecovery(ifaceName string, confPath string) {
 	logger.Info("Fr-Docker Started!\n")
 	defer logger.Info("Fr-Docker Stopped!\n")
+	constants.Network = ifaceName
 	var err error
 	InitContainers(ifaceName, confPath)
-	go SetupCloseHandler(ifaceName)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go SetupCloseHandler(ifaceName, &wg)
+	defer wg.Wait()
 	pcapHandler, err = pcap.OpenLive(ifaceName, 1600, true, pcap.BlockForever)
 	var filter = "tcp"
 	if err != nil {
@@ -40,17 +46,50 @@ func RunFrecovery(ifaceName string, confPath string) {
 		tcp := packet.TransportLayer().(*layers.TCP)
 		srcIP := packet.NetworkLayer().NetworkFlow().Src().String()
 		dstIP := packet.NetworkLayer().NetworkFlow().Dst().String()
-		if !(constants.IPAllMSMap.Has(srcIP) && constants.IPAllMSMap.Has(dstIP)) {
-			continue
-		}
+
 		if len(tcp.Payload) < 16 {
 			continue
 		}
+
 		var httpInfo *types.HttpInfo
-		if httpInfo, err = utils.GetHttpInfo(packet, tcp); err != nil {
-			logger.Fatalln(err)
+		// 判断入口微服务组
+		if !constants.IPAllMSMap.Has(srcIP) && constants.IPAllMSMap.Has(dstIP) {
+			httpInfo, err = utils.GetHttpInfo(packet, tcp)
+			if err != nil {
+				continue
+			}
+			if httpInfo.Type == "REQUEST" {
+				go func() {
+					obj, _ := constants.IPAllMSMap.Get(dstIP)
+					msType := obj.(string)
+					colon := strings.Index(msType, ":")
+					obj, _ = constants.ServiceGroupMap.Get(msType[colon+1:])
+					serviceGroup := obj.(*types.ServiceGroup)
+					if serviceGroup.Entry {
+						return
+					}
+					serviceGroup.Entry = true
+					for _, IP := range serviceGroup.Services {
+						obj, _ := constants.IPServiceContainerMap.Get(IP)
+						container := obj.(*types.Container)
+						container.Entry = true
+					}
+				}()
+			}
+		}
+
+		if !(constants.IPAllMSMap.Has(srcIP) && constants.IPAllMSMap.Has(dstIP)) {
 			continue
 		}
+
+		if httpInfo == nil {
+			httpInfo, err = utils.GetHttpInfo(packet, tcp)
+			if err != nil {
+				logger.Errorln(err)
+				continue
+			}
+		}
+
 		var currentIP string // 当前http应该检测的服务IP
 		if constants.IPServiceContainerMap.Has(srcIP) {
 			currentIP = srcIP
@@ -75,5 +114,10 @@ func RunFrecovery(ifaceName string, confPath string) {
 			constants.IPChanMap[currentIP] = httpChan
 		}
 		constants.IPChanMapMutex.Unlock()
+	}
+	logger.Info("Closing All Channels......\n")
+	for IP, ch := range constants.IPChanMap {
+		close(ch)
+		delete(constants.IPChanMap, IP)
 	}
 }

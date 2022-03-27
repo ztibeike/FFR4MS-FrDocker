@@ -41,6 +41,7 @@ func GetConfigFromEureka(confPath string) []*types.Container {
 		constants.IPAllMSMap.Set(gateway[:colon], "GATEWAY:"+gatewayInfo.Getway)
 		serviceGroup := &types.ServiceGroup{
 			Gateway: gateway,
+			Entry:   false,
 		}
 		constants.ServiceGroupMap.Set(gatewayInfo.Getway, serviceGroup)
 	}

@@ -2,22 +2,31 @@ package frecovery
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"frdocker/constants"
+	"frdocker/models"
 	"frdocker/settings"
 	"frdocker/types"
 	"frdocker/utils/logger"
 	"io/ioutil"
 	"math"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/robfig/cron"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func StateMonitor(IP string, httpChan chan *types.HttpInfo) {
 	// var traceIdStateMap = make(map[string]types.State)
 	obj, _ := constants.IPServiceContainerMap.Get(IP)
 	var container = obj.(*types.Container)
+	ctx, cancel := context.WithCancel(context.Background())
+	go CronSaveTraffic(container, ctx)
+	defer cancel()
 	logger.Info("[Monitoring Container] Group(%s) IP(%s) ID(%s)\n", container.Group, container.IP, container.ID[:10])
 	var TraceMap = make(map[string]chan *types.HttpInfo) // TraceId为key，每个TraceId开启一个go routine
 	for httpInfo := range httpChan {
@@ -77,6 +86,13 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 					IP:       httpInfo_end.DstIP,
 					HttpType: httpInfo_end.Type,
 				}
+				if !(container.IP == httpInfo_end.SrcIP && httpInfo.Type == "RESPONSE") {
+					obj, _ := constants.IPAllMSMap.Get(httpInfo_end.DstIP)
+					msType := obj.(string)
+					colon := strings.Index(msType, ":")
+					group := msType[colon+1:]
+					container.Calls = append(container.Calls, group)
+				}
 			}
 			timeInterval := math.Abs(float64(httpInfo_end.Timestamp.Nanosecond() - httpInfo_start.Timestamp.Nanosecond()))
 			ch := checkTimeExceedMap[currentIdx]
@@ -84,8 +100,7 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 			data := &types.Vector{
 				Data: []float64{timeInterval},
 			}
-			ecc := TEDA(container.States[currentIdx], data)
-			var threshold = (math.Pow(settings.NSIGMA, 2) + 1) / float64((2 * container.States[currentIdx].K))
+			ecc, threshold := TEDA(container.States[currentIdx], data)
 			var health = container.Health
 			if ecc > threshold && health {
 				health = CheckHealthByLocalActuator(container, currentIdx)
@@ -106,7 +121,8 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 	}
 }
 
-func TEDA(state *types.State, data *types.Vector) float64 {
+func TEDA(state *types.State, data *types.Vector) (float64, float64) {
+	var threshold float64
 	if state.K == 1 {
 		state.Lock()
 		state.Variance.Data = make([]float64, len(data.Data))
@@ -114,10 +130,13 @@ func TEDA(state *types.State, data *types.Vector) float64 {
 		state.Sigma = 0.0
 		state.Ecc = math.NaN()
 		state.K = state.K + 1
+		threshold = (math.Pow(settings.NSIGMA, 2) + 1) / float64((2 * state.K))
+		state.Threshold = threshold
 		state.MaxTime = state.Variance.Data[0] + settings.NSIGMA*state.Variance.Data[0]
 		state.MinTime = state.Variance.Data[0] - settings.NSIGMA*state.Variance.Data[0]
+		SetStateRecord(state)
 		state.Unlock()
-		return math.NaN()
+		return math.NaN(), threshold
 	}
 
 	state.RLock()
@@ -135,10 +154,13 @@ func TEDA(state *types.State, data *types.Vector) float64 {
 	state.Sigma = sigma
 	state.Ecc = normalized_ecc
 	state.K = state.K + 1
+	threshold = (math.Pow(settings.NSIGMA, 2) + 1) / float64((2 * state.K))
+	state.Threshold = threshold
 	copy(state.Variance.Data, variance.Data)
 	state.MaxTime = state.Variance.Data[0] + settings.NSIGMA*math.Sqrt(state.Sigma)
 	state.MinTime = state.Variance.Data[0] - settings.NSIGMA*math.Sqrt(state.Sigma)
-	return normalized_ecc
+	SetStateRecord(state)
+	return normalized_ecc, threshold
 }
 
 func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentIdx int, channel chan float64) {
@@ -150,7 +172,7 @@ func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentId
 	timeoutChan := make(chan int, 1)
 	// 设置超时时间，避免因服务崩溃导致本状态一直未结束，没有计算离心率和状态转变时间，从而导致无法检测出服务故障
 	go func() {
-		time.Sleep(time.Duration(maxTime))
+		time.Sleep(time.Duration(maxTime * settings.MAX_WAIT_TIME_FACTOR))
 		timeoutChan <- 1
 		close(timeoutChan)
 	}()
@@ -251,4 +273,84 @@ func GatewayReplaceInstance(container *types.Container) {
 	}
 	logger.Info("[Gateway Replace Instance] [Gateway(%s) Group(%s) Instance(%s)] Service Down!\n",
 		gateway, container.Group, container.IP)
+}
+
+func SetStateRecord(state *types.State) {
+	recordLen := len(state.Record)
+	start := 0
+	if recordLen >= settings.STATE_RECORD_LEN {
+		start = recordLen - settings.STATE_RECORD_LEN + 1
+	}
+	state.Record = append(state.Record[start:], &types.StateRecord{
+		Ecc:       state.Ecc,
+		Threshold: state.Threshold,
+	})
+}
+
+func CronSaveTraffic(container *types.Container, ctx context.Context) {
+	var spec string
+	if settings.CRON_TRAFFIC_LEVEL == "HOUR" {
+		spec = "0 59 * * * ?"
+	} else if settings.CRON_TRAFFIC_LEVEL == "MINUTE" {
+		spec = "59 * * * * ?"
+	} else {
+		return
+	}
+	c := cron.New()
+	c.AddFunc(spec, func() {
+		t := time.Now()
+		var containerTraffic *models.ContainerTraffic
+		var filter = bson.D{
+			{Key: "network", Value: constants.Network},
+			{Key: "ip", Value: container.IP},
+		}
+		trafficMgo.FindOne(filter).Decode(&containerTraffic)
+		traffic := &models.Traffic{
+			Year:   t.Year(),
+			Month:  int(t.Month()),
+			Day:    t.Day(),
+			Hour:   t.Hour(),
+			Minute: t.Minute(),
+		}
+		if containerTraffic == nil {
+			if len(container.States) == 0 {
+				traffic.Number = 0
+				traffic.K = 0
+			} else {
+				container.States[0].RLock()
+				traffic.Number = container.States[0].K
+				traffic.K = container.States[0].K
+				container.States[0].RUnlock()
+			}
+			containerTraffic = &models.ContainerTraffic{
+				Network: constants.Network,
+				IP:      container.IP,
+				Port:    container.Port,
+				Group:   container.Group,
+				Entry:   container.Entry,
+				Traffic: []*models.Traffic{traffic},
+			}
+			trafficMgo.InsertOne(containerTraffic)
+		} else {
+			_traffics := containerTraffic.Traffic
+			if len(container.States) == 0 {
+				traffic.Number = 0
+				traffic.K = 0
+			} else {
+				container.States[0].RLock()
+				traffic.Number = container.States[0].K - _traffics[len(_traffics)-1].K
+				traffic.K = container.States[0].K
+				container.States[0].RUnlock()
+			}
+			start := 0
+			if len(_traffics) >= settings.CRON_TRAFFIC_LEN {
+				start = len(_traffics) - settings.CRON_TRAFFIC_LEN + 1
+			}
+			containerTraffic.Traffic = append(containerTraffic.Traffic[start:], traffic)
+			trafficMgo.ReplaceOne(filter, containerTraffic)
+		}
+	})
+	go c.Start()
+	defer c.Stop()
+	<-ctx.Done()
 }

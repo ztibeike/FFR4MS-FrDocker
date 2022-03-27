@@ -69,6 +69,9 @@ func GetHttpType(payload []byte) (string, error) {
 func GetTraceId(payload []byte) string {
 	data := string(payload)
 	idx := strings.Index(data, "tid")
+	if idx == -1 {
+		return ""
+	}
 	dataRune := []rune(data)
 	var traceId string
 	for i := idx; i < len(dataRune); i++ {
@@ -86,22 +89,19 @@ func GetHttpInfo(packet gopacket.Packet, tcpLayer *layers.TCP) (*types.HttpInfo,
 	srcPort := strconv.Itoa(int(tcpLayer.SrcPort))
 	dstPort := strconv.Itoa(int(tcpLayer.DstPort))
 	payload := tcpLayer.Payload
-	if constants.IPAllMSMap.Has(srcIP) && constants.IPAllMSMap.Has(dstIP) {
-		httpInfo := &types.HttpInfo{
-			SrcIP:   srcIP,
-			SrcPort: srcPort,
-			DstIP:   dstIP,
-			DstPort: dstPort,
-		}
-		httpType, err := GetHttpType(payload)
-		if err != nil {
-			return httpInfo, err
-		}
-		httpInfo.Type = httpType
-		httpInfo.TraceId = GetTraceId(payload)
-		httpInfo.Internal = constants.IPAllMSMap.Has(srcIP)
-		httpInfo.Timestamp = packet.Metadata().Timestamp
-		return httpInfo, nil
+	httpInfo := &types.HttpInfo{
+		SrcIP:   srcIP,
+		SrcPort: srcPort,
+		DstIP:   dstIP,
+		DstPort: dstPort,
 	}
-	return &types.HttpInfo{}, errors.New("non-sense packet")
+	httpType, err := GetHttpType(payload)
+	if err != nil {
+		return httpInfo, err
+	}
+	httpInfo.Type = httpType
+	httpInfo.TraceId = GetTraceId(payload)
+	httpInfo.Internal = constants.IPAllMSMap.Has(srcIP)
+	httpInfo.Timestamp = packet.Metadata().Timestamp
+	return httpInfo, nil
 }

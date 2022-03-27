@@ -14,24 +14,20 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func SetupCloseHandler(ifaceName string) {
+func SetupCloseHandler(ifaceName string, wg *sync.WaitGroup) {
+	defer wg.Done()
 	sigalChan := make(chan os.Signal, 1)
 	signal.Notify(sigalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGPIPE, syscall.SIGABRT, syscall.SIGQUIT)
 	<-sigalChan
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go CloseChannels(ifaceName, &wg)
-	go SaveContainerInfo(ifaceName, &wg)
-	wg.Wait()
+	var jobWg sync.WaitGroup
+	jobWg.Add(2)
+	go ClosePcapHandler(ifaceName, &jobWg)
+	go SaveContainerInfo(ifaceName, &jobWg)
+	jobWg.Wait()
 }
 
-func CloseChannels(ifaceName string, wg *sync.WaitGroup) {
+func ClosePcapHandler(ifaceName string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	logger.Info("Closing All Channels......\n")
-	for IP, ch := range constants.IPChanMap {
-		close(ch)
-		delete(constants.IPChanMap, IP)
-	}
 	pcapHandler.Close()
 	logger.Info("Stop capturing packets on interface: %s\n", ifaceName)
 }
@@ -55,7 +51,7 @@ func SaveContainerInfo(ifaceName string, wg *sync.WaitGroup) {
 			container := obj.(*types.Container)
 			dbContainer := &models.Container{
 				Container: container,
-				NetworkId: network.Id,
+				Network:   ifaceName,
 			}
 			dbContainers = append(dbContainers, dbContainer)
 		}
@@ -65,10 +61,10 @@ func SaveContainerInfo(ifaceName string, wg *sync.WaitGroup) {
 			container := obj.(*types.Container)
 			dbContainer := &models.Container{
 				Container: container,
-				NetworkId: network.Id,
+				Network:   ifaceName,
 			}
 			filter := bson.D{
-				{Key: "networkId", Value: dbContainer.NetworkId},
+				{Key: "network", Value: ifaceName},
 				{Key: "container.ip", Value: dbContainer.Container.IP},
 			}
 			_ = containerMgo.ReplaceOne(filter, dbContainer)
