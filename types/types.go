@@ -7,17 +7,18 @@ import (
 
 // 微服务/容器
 type Container struct {
-	IP      string   `bson:"ip" json:"ip"`
-	Port    string   `bson:"port" json:"port"`
-	Group   string   `bson:"group" json:"group"`
-	Gateway string   `bson:"gateway" json:"gateway"`
-	Leaf    bool     `bson:"leaf" json:"leaf"`
-	Health  bool     `bson:"health" json:"health"`
-	ID      string   `bson:"id" json:"id"`
-	Name    string   `bson:"name" json:"name"`
-	States  []*State `bson:"states" json:"states"`
-	Calls   []string `bson:"calls" json:"calls"`
-	Entry   bool     `bson:"entry" json:"entry"`
+	IP      string              `bson:"ip" json:"ip"`
+	Port    string              `bson:"port" json:"port"`
+	Group   string              `bson:"group" json:"group"`
+	Gateway string              `bson:"gateway" json:"gateway"`
+	Leaf    bool                `bson:"leaf" json:"leaf"`
+	Health  bool                `bson:"health" json:"health"`
+	ID      string              `bson:"id" json:"id"`
+	Name    string              `bson:"name" json:"name"`
+	States  map[string][]*State `bson:"states" json:"states"`
+	Calls   []string            `bson:"calls" json:"calls"`
+	Entry   bool                `bson:"entry" json:"entry"`
+	// Traffic int64    `bson:"traffic" json:"traffic"`
 }
 
 // 微服务状态
@@ -67,6 +68,7 @@ type ServiceDetail struct {
 
 type HttpInfo struct {
 	Type      string
+	URL       string
 	SrcIP     string
 	SrcPort   string
 	DstIP     string

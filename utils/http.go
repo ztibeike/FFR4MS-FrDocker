@@ -83,6 +83,16 @@ func GetTraceId(payload []byte) string {
 	return strings.Split(traceId, ": ")[1]
 }
 
+func GetURL(payload []byte) string {
+	data := string(payload)
+	start := strings.Index(data, "/")
+	end := strings.Index(data, "HTTP")
+	if start == -1 || end == -1 || start >= end {
+		return ""
+	}
+	return data[start : end-1]
+}
+
 func GetHttpInfo(packet gopacket.Packet, tcpLayer *layers.TCP) (*types.HttpInfo, error) {
 	srcIP := packet.NetworkLayer().NetworkFlow().Src().String()
 	dstIP := packet.NetworkLayer().NetworkFlow().Dst().String()
@@ -101,6 +111,7 @@ func GetHttpInfo(packet gopacket.Packet, tcpLayer *layers.TCP) (*types.HttpInfo,
 	}
 	httpInfo.Type = httpType
 	httpInfo.TraceId = GetTraceId(payload)
+	httpInfo.URL = GetURL(payload)
 	httpInfo.Internal = constants.IPAllMSMap.Has(srcIP)
 	httpInfo.Timestamp = packet.Metadata().Timestamp
 	return httpInfo, nil

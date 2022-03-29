@@ -14,6 +14,7 @@ import (
 	"math"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/robfig/cron"
@@ -25,11 +26,13 @@ func StateMonitor(IP string, httpChan chan *types.HttpInfo) {
 	obj, _ := constants.IPServiceContainerMap.Get(IP)
 	var container = obj.(*types.Container)
 	ctx, cancel := context.WithCancel(context.Background())
-	go CronSaveTraffic(container, ctx)
+	var trafficCount int64 = 0
+	go CronSaveTraffic(container, ctx, &trafficCount)
 	defer cancel()
 	logger.Info("[Monitoring Container] Group(%s) IP(%s) ID(%s)\n", container.Group, container.IP, container.ID[:10])
 	var TraceMap = make(map[string]chan *types.HttpInfo) // TraceId为key，每个TraceId开启一个go routine
 	for httpInfo := range httpChan {
+		atomic.AddInt64(&trafficCount, 1)
 		var channel chan *types.HttpInfo
 		var ok bool
 		var traceId = httpInfo.TraceId
@@ -41,7 +44,13 @@ func StateMonitor(IP string, httpChan chan *types.HttpInfo) {
 			}
 		} else {
 			channel = make(chan *types.HttpInfo)
-			go CheckingStateByTraceId(traceId, container, channel)
+			url := httpInfo.URL // 每个微服务第一个状态是开始于接收到请求，httpInfo中有URL
+			if container.States == nil {
+				container.States = make(map[string][]*types.State)
+			} else if _, ok := container.States[url]; !ok {
+				container.States[url] = []*types.State{}
+			}
+			go CheckingStateByTraceId(traceId, url, container, channel)
 			channel <- httpInfo
 			TraceMap[traceId] = channel
 		}
@@ -53,17 +62,18 @@ func StateMonitor(IP string, httpChan chan *types.HttpInfo) {
 	}
 }
 
-func CheckingStateByTraceId(traceId string, container *types.Container, httpChan chan *types.HttpInfo) {
+func CheckingStateByTraceId(traceId string, url string, container *types.Container, httpChan chan *types.HttpInfo) {
 	var idx = 0
 	var httpInfo_start *types.HttpInfo = nil
 	var httpInfo_end *types.HttpInfo = nil
 	// var timeOutIdx = -1
 	var checkTimeExceedMap = make(map[int]chan float64)
+	var states = container.States[url]
 	for httpInfo := range httpChan {
 		if httpInfo_start == nil {
 			httpInfo_start = httpInfo
-			if len(container.States) <= idx {
-				container.States = append(container.States, &types.State{
+			if len(states) <= idx {
+				states = append(states, &types.State{
 					Id: &types.StateId{
 						StartWith: &types.StateEndpointEvent{
 							IP:       httpInfo_start.SrcIP,
@@ -73,20 +83,21 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 					K:        1,
 					Variance: &types.Vector{},
 				})
+				container.States[url] = states
 			}
 			ch := make(chan float64, 1)
 			checkTimeExceedMap[idx] = ch
-			go CheckTimeExceedNotEnd(container, traceId, idx, ch)
+			go CheckTimeExceedNotEnd(container, traceId, url, idx, ch)
 		} else {
 			httpInfo_end = httpInfo
 			currentIdx := idx
 			idx += 1
-			if container.States[currentIdx].Id.EndWith == nil {
-				container.States[currentIdx].Id.EndWith = &types.StateEndpointEvent{
+			if states[currentIdx].Id.EndWith == nil {
+				states[currentIdx].Id.EndWith = &types.StateEndpointEvent{
 					IP:       httpInfo_end.DstIP,
 					HttpType: httpInfo_end.Type,
 				}
-				if !(container.IP == httpInfo_end.SrcIP && httpInfo.Type == "RESPONSE") {
+				if container.IP == httpInfo_end.SrcIP && httpInfo.Type == "REQUEST" {
 					obj, _ := constants.IPAllMSMap.Get(httpInfo_end.DstIP)
 					msType := obj.(string)
 					colon := strings.Index(msType, ":")
@@ -100,17 +111,17 @@ func CheckingStateByTraceId(traceId string, container *types.Container, httpChan
 			data := &types.Vector{
 				Data: []float64{timeInterval},
 			}
-			ecc, threshold := TEDA(container.States[currentIdx], data)
+			ecc, threshold := TEDA(states[currentIdx], data)
 			var health = container.Health
 			if ecc > threshold && health {
-				health = CheckHealthByLocalActuator(container, currentIdx)
+				health = CheckHealthByLocalActuator(container)
 				if !health {
 					MarkContainerUnHealthy(container)
 				}
 			}
 			logger.Trace("[Checking State] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) TimeInterval(%dns) Eccentricity(%f) MinTime(%d) MaxTime(%d) Health(%t)]\n",
 				traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(timeInterval), ecc,
-				int(container.States[currentIdx].MinTime), int(container.States[currentIdx].MaxTime), health)
+				int(states[currentIdx].MinTime), int(states[currentIdx].MaxTime), health)
 			httpInfo_start = nil
 			httpInfo_end = nil
 		}
@@ -163,8 +174,8 @@ func TEDA(state *types.State, data *types.Vector) (float64, float64) {
 	return normalized_ecc, threshold
 }
 
-func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentIdx int, channel chan float64) {
-	state := container.States[currentIdx]
+func CheckTimeExceedNotEnd(container *types.Container, traceId string, url string, currentIdx int, channel chan float64) {
+	state := container.States[url][currentIdx]
 	if state.K == 1 {
 		return
 	}
@@ -196,7 +207,7 @@ func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentId
 					return
 				}
 				if t > maxTime {
-					health := CheckHealthByLocalActuator(container, currentIdx)
+					health := CheckHealthByLocalActuator(container)
 					logger.Warn("[Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
 						traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(state.MaxTime), health)
 					if !health {
@@ -207,7 +218,7 @@ func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentId
 			}
 		case <-timeoutChan:
 			{
-				health := CheckHealthByLocalActuator(container, currentIdx)
+				health := CheckHealthByLocalActuator(container)
 				logger.Warn("[Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
 					traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(state.MaxTime), health)
 				if !health {
@@ -220,7 +231,7 @@ func CheckTimeExceedNotEnd(container *types.Container, traceId string, currentId
 	}
 }
 
-func CheckHealthByLocalActuator(container *types.Container, idx int) bool {
+func CheckHealthByLocalActuator(container *types.Container) bool {
 	var IP = container.IP
 	var port = container.Port
 	var client = &http.Client{
@@ -287,7 +298,7 @@ func SetStateRecord(state *types.State) {
 	})
 }
 
-func CronSaveTraffic(container *types.Container, ctx context.Context) {
+func CronSaveTraffic(container *types.Container, ctx context.Context, trafficCount *int64) {
 	var spec string
 	if settings.CRON_TRAFFIC_LEVEL == "HOUR" {
 		spec = "0 59 * * * ?"
@@ -311,17 +322,9 @@ func CronSaveTraffic(container *types.Container, ctx context.Context) {
 			Day:    t.Day(),
 			Hour:   t.Hour(),
 			Minute: t.Minute(),
+			Number: atomic.LoadInt64(trafficCount),
 		}
 		if containerTraffic == nil {
-			if len(container.States) == 0 {
-				traffic.Number = 0
-				traffic.K = 0
-			} else {
-				container.States[0].RLock()
-				traffic.Number = container.States[0].K
-				traffic.K = container.States[0].K
-				container.States[0].RUnlock()
-			}
 			containerTraffic = &models.ContainerTraffic{
 				Network: constants.Network,
 				IP:      container.IP,
@@ -333,15 +336,6 @@ func CronSaveTraffic(container *types.Container, ctx context.Context) {
 			trafficMgo.InsertOne(containerTraffic)
 		} else {
 			_traffics := containerTraffic.Traffic
-			if len(container.States) == 0 {
-				traffic.Number = 0
-				traffic.K = 0
-			} else {
-				container.States[0].RLock()
-				traffic.Number = container.States[0].K - _traffics[len(_traffics)-1].K
-				traffic.K = container.States[0].K
-				container.States[0].RUnlock()
-			}
 			start := 0
 			if len(_traffics) >= settings.CRON_TRAFFIC_LEN {
 				start = len(_traffics) - settings.CRON_TRAFFIC_LEN + 1
@@ -349,6 +343,7 @@ func CronSaveTraffic(container *types.Container, ctx context.Context) {
 			containerTraffic.Traffic = append(containerTraffic.Traffic[start:], traffic)
 			trafficMgo.ReplaceOne(filter, containerTraffic)
 		}
+		atomic.StoreInt64(trafficCount, 0)
 	})
 	go c.Start()
 	defer c.Stop()
