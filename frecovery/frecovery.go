@@ -1,6 +1,7 @@
 package frecovery
 
 import (
+	"context"
 	"frdocker/constants"
 	"frdocker/types"
 	"frdocker/utils"
@@ -18,6 +19,7 @@ func RunFrecovery(ifaceName string, confPath string) {
 	logger.Info("Fr-Docker Started!\n")
 	defer logger.Info("Fr-Docker Stopped!\n")
 	constants.Network = ifaceName
+	constants.RegistryURL = confPath
 	var err error
 	InitContainers(ifaceName, confPath)
 	var wg sync.WaitGroup
@@ -36,6 +38,10 @@ func RunFrecovery(ifaceName string, confPath string) {
 	packetSource := gopacket.NewPacketSource(pcapHandler, pcapHandler.LinkType())
 	packets := packetSource.Packets()
 
+	trafficChan := make(chan string)
+	ctx, cancel := context.WithCancel(context.Background())
+	go CronSaveTraffic(ctx, trafficChan)
+	go CronSaveContainerInfo(ctx, ifaceName)
 	// var IPChanMap = make(map[string]chan *types.HttpInfo)
 
 	for packet := range packets {
@@ -53,7 +59,7 @@ func RunFrecovery(ifaceName string, confPath string) {
 
 		var httpInfo *types.HttpInfo
 		// 判断入口微服务组
-		if !constants.IPAllMSMap.Has(srcIP) && constants.IPAllMSMap.Has(dstIP) {
+		if !constants.IPAllMSMap.Has(srcIP) && constants.IPAllMSMap.Has(dstIP) && !constants.IPServiceContainerMap.Has(dstIP) {
 			httpInfo, err = utils.GetHttpInfo(packet, tcp)
 			if err != nil {
 				continue
@@ -65,6 +71,11 @@ func RunFrecovery(ifaceName string, confPath string) {
 					colon := strings.Index(msType, ":")
 					obj, _ = constants.ServiceGroupMap.Get(msType[colon+1:])
 					serviceGroup := obj.(*types.ServiceGroup)
+					gateway := serviceGroup.Gateway
+					colon = strings.Index(gateway, ":")
+					if httpInfo.DstPort != gateway[colon+1:] {
+						return
+					}
 					if serviceGroup.Entry {
 						return
 					}
@@ -96,6 +107,7 @@ func RunFrecovery(ifaceName string, confPath string) {
 		} else {
 			currentIP = dstIP
 		}
+		trafficChan <- currentIP
 		obj, _ := constants.IPServiceContainerMap.Get(currentIP)
 		var currentContainer = obj.(*types.Container)
 		constants.IPChanMapMutex.Lock()
@@ -116,8 +128,10 @@ func RunFrecovery(ifaceName string, confPath string) {
 		constants.IPChanMapMutex.Unlock()
 	}
 	logger.Info("Closing All Channels......\n")
+	cancel()
 	for IP, ch := range constants.IPChanMap {
 		close(ch)
 		delete(constants.IPChanMap, IP)
 	}
+	close(trafficChan)
 }

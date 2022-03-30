@@ -26,6 +26,7 @@ func InitContainers(ifaceName, confPath string) {
 }
 
 func InitFromDataBase(ifaceName string) {
+	logger.Info("Init Containers from DataBase\n")
 	filter := bson.D{
 		{Key: "network", Value: ifaceName},
 	}
@@ -56,6 +57,7 @@ func InitFromDataBase(ifaceName string) {
 }
 
 func InitFromConfiguration(confPath string) {
+	logger.Info("Init Containers from Registry Configuration\n")
 	var containers []*types.Container
 	if strings.HasPrefix(confPath, "http") {
 		containers = utils.GetConfigFromEureka(confPath)

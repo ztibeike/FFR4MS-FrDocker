@@ -21,3 +21,5 @@
 vendor
 
 *.mongodb
+
+test

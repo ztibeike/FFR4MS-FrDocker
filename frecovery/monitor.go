@@ -2,11 +2,9 @@ package frecovery
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"frdocker/constants"
-	"frdocker/models"
 	"frdocker/settings"
 	"frdocker/types"
 	"frdocker/utils/logger"
@@ -14,25 +12,16 @@ import (
 	"math"
 	"net/http"
 	"strings"
-	"sync/atomic"
 	"time"
-
-	"github.com/robfig/cron"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func StateMonitor(IP string, httpChan chan *types.HttpInfo) {
 	// var traceIdStateMap = make(map[string]types.State)
 	obj, _ := constants.IPServiceContainerMap.Get(IP)
 	var container = obj.(*types.Container)
-	ctx, cancel := context.WithCancel(context.Background())
-	var trafficCount int64 = 0
-	go CronSaveTraffic(container, ctx, &trafficCount)
-	defer cancel()
 	logger.Info("[Monitoring Container] Group(%s) IP(%s) ID(%s)\n", container.Group, container.IP, container.ID[:10])
 	var TraceMap = make(map[string]chan *types.HttpInfo) // TraceId为key，每个TraceId开启一个go routine
 	for httpInfo := range httpChan {
-		atomic.AddInt64(&trafficCount, 1)
 		var channel chan *types.HttpInfo
 		var ok bool
 		var traceId = httpInfo.TraceId
@@ -296,56 +285,4 @@ func SetStateRecord(state *types.State) {
 		Ecc:       state.Ecc,
 		Threshold: state.Threshold,
 	})
-}
-
-func CronSaveTraffic(container *types.Container, ctx context.Context, trafficCount *int64) {
-	var spec string
-	if settings.CRON_TRAFFIC_LEVEL == "HOUR" {
-		spec = "0 59 * * * ?"
-	} else if settings.CRON_TRAFFIC_LEVEL == "MINUTE" {
-		spec = "59 * * * * ?"
-	} else {
-		return
-	}
-	c := cron.New()
-	c.AddFunc(spec, func() {
-		t := time.Now()
-		var containerTraffic *models.ContainerTraffic
-		var filter = bson.D{
-			{Key: "network", Value: constants.Network},
-			{Key: "ip", Value: container.IP},
-		}
-		trafficMgo.FindOne(filter).Decode(&containerTraffic)
-		traffic := &models.Traffic{
-			Year:   t.Year(),
-			Month:  int(t.Month()),
-			Day:    t.Day(),
-			Hour:   t.Hour(),
-			Minute: t.Minute(),
-			Number: atomic.LoadInt64(trafficCount),
-		}
-		if containerTraffic == nil {
-			containerTraffic = &models.ContainerTraffic{
-				Network: constants.Network,
-				IP:      container.IP,
-				Port:    container.Port,
-				Group:   container.Group,
-				Entry:   container.Entry,
-				Traffic: []*models.Traffic{traffic},
-			}
-			trafficMgo.InsertOne(containerTraffic)
-		} else {
-			_traffics := containerTraffic.Traffic
-			start := 0
-			if len(_traffics) >= settings.CRON_TRAFFIC_LEN {
-				start = len(_traffics) - settings.CRON_TRAFFIC_LEN + 1
-			}
-			containerTraffic.Traffic = append(containerTraffic.Traffic[start:], traffic)
-			trafficMgo.ReplaceOne(filter, containerTraffic)
-		}
-		atomic.StoreInt64(trafficCount, 0)
-	})
-	go c.Start()
-	defer c.Stop()
-	<-ctx.Done()
 }

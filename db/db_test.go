@@ -21,24 +21,7 @@ func TestDB(t *testing.T) {
 			Name:    "123456",
 			Leaf:    true,
 			Health:  true,
-			States: []*types.State{{
-				Id: &types.StateId{
-					StartWith: &types.StateEndpointEvent{
-						IP:       "123456",
-						HttpType: "123456",
-					},
-					EndWith: &types.StateEndpointEvent{
-						IP:       "123456",
-						HttpType: "123456",
-					},
-				},
-				Ecc:      1.0,
-				Variance: &types.Vector{Data: []float64{1.0, 2.0}},
-				Sigma:    1.0,
-				K:        1,
-				MaxTime:  1.0,
-				MinTime:  1.0,
-			}},
+			States:  make(map[string][]*types.State),
 		},
 		Network: "23233",
 	}
@@ -59,7 +42,7 @@ func TestFindMany(t *testing.T) {
 	}
 	cursor := ContainerMgo.FindMany(filter)
 	cursor.All(context.TODO(), &dbContainers)
-	dbContainers[0].Container.States = append(dbContainers[0].Container.States, &types.State{})
+	// dbContainers[0].Container.States = append(dbContainers[0].Container.States, &types.State{})
 	fmt.Println(dbContainers)
 }
 

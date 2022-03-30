@@ -19,21 +19,16 @@ func SetupCloseHandler(ifaceName string, wg *sync.WaitGroup) {
 	sigalChan := make(chan os.Signal, 1)
 	signal.Notify(sigalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGPIPE, syscall.SIGABRT, syscall.SIGQUIT)
 	<-sigalChan
-	var jobWg sync.WaitGroup
-	jobWg.Add(2)
-	go ClosePcapHandler(ifaceName, &jobWg)
-	go SaveContainerInfo(ifaceName, &jobWg)
-	jobWg.Wait()
+	ClosePcapHandler(ifaceName)
+	SaveContainerInfo(ifaceName)
 }
 
-func ClosePcapHandler(ifaceName string, wg *sync.WaitGroup) {
-	defer wg.Done()
+func ClosePcapHandler(ifaceName string) {
 	pcapHandler.Close()
 	logger.Info("Stop capturing packets on interface: %s\n", ifaceName)
 }
 
-func SaveContainerInfo(ifaceName string, wg *sync.WaitGroup) {
-	defer wg.Done()
+func SaveContainerInfo(ifaceName string) {
 	logger.Info("Saving All Containers Info & States......\n")
 	var network *models.NetWork
 	filter := bson.D{
@@ -71,3 +66,5 @@ func SaveContainerInfo(ifaceName string, wg *sync.WaitGroup) {
 		}
 	}
 }
+
+// func CronSaveContainerInfo
