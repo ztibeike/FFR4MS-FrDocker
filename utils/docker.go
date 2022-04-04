@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"io"
 	"log"
 
+	"github.com/ahmetb/dlog"
 	dockerTypes "github.com/docker/docker/api/types"
 
 	"github.com/docker/docker/client"
@@ -37,6 +39,29 @@ func GetServiceContainers(containers []*types.Container) {
 			// containers[idx] = container
 		}
 	}
+}
+
+func GetContainerLogs(containerId string, tail string) (string, error) {
+	options := dockerTypes.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Tail:       tail,
+	}
+	resp, err := dockerClient.ContainerLogs(ctx, containerId, options)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Close()
+	rr := dlog.NewReader(resp)
+	s := bufio.NewScanner(rr)
+	var result string
+	for s.Scan() {
+		result = result + s.Text() + "\n"
+		if err := s.Err(); err != nil {
+			return "", err
+		}
+	}
+	return result, nil
 }
 
 func GetDockerVersion() string {
