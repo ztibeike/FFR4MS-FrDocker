@@ -3,13 +3,14 @@ package utils
 import (
 	"bufio"
 	"errors"
-	"frdocker/constants"
-	"frdocker/types"
-	"frdocker/utils/logger"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/types"
+	"gitee.com/zengtao321/frdocker/utils/logger"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"

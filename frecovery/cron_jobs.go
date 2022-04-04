@@ -2,12 +2,13 @@ package frecovery
 
 import (
 	"context"
-	"frdocker/constants"
-	"frdocker/models"
-	"frdocker/settings"
-	"frdocker/types"
 	"sync/atomic"
 	"time"
+
+	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/models"
+	"gitee.com/zengtao321/frdocker/settings"
+	"gitee.com/zengtao321/frdocker/types"
 
 	"github.com/robfig/cron"
 	"go.mongodb.org/mongo-driver/bson"

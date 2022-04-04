@@ -2,13 +2,14 @@ package frecovery
 
 import (
 	"context"
-	"frdocker/constants"
-	"frdocker/types"
-	"frdocker/utils"
 	"strings"
 	"sync"
 
-	"frdocker/utils/logger"
+	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/types"
+	"gitee.com/zengtao321/frdocker/utils"
+
+	"gitee.com/zengtao321/frdocker/utils/logger"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"

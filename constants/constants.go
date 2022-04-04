@@ -1,8 +1,9 @@
 package constants
 
 import (
-	"frdocker/types"
 	"sync"
+
+	"gitee.com/zengtao321/frdocker/types"
 
 	cmap "github.com/orcaman/concurrent-map"
 )

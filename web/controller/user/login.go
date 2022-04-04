@@ -1,11 +1,12 @@
 package user
 
 import (
-	"frdocker/db"
-	"frdocker/web/entity"
-	"frdocker/web/entity/R"
-	"frdocker/web/service/token"
 	"net/http"
+
+	"gitee.com/zengtao321/frdocker/db"
+	"gitee.com/zengtao321/frdocker/web/entity"
+	"gitee.com/zengtao321/frdocker/web/entity/R"
+	"gitee.com/zengtao321/frdocker/web/service/token"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"

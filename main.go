@@ -1,8 +1,8 @@
 package main
 
 import (
-	"frdocker/frecovery"
-	"frdocker/web"
+	"gitee.com/zengtao321/frdocker/frecovery"
+	"gitee.com/zengtao321/frdocker/web"
 )
 
 func main() {

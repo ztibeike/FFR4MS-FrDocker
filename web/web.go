@@ -1,8 +1,8 @@
 package web
 
 import (
-	"frdocker/settings"
-	"frdocker/web/router"
+	"gitee.com/zengtao321/frdocker/settings"
+	"gitee.com/zengtao321/frdocker/web/router"
 )
 
 func SetupWebHander() {

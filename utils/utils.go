@@ -2,12 +2,13 @@ package utils
 
 import (
 	"encoding/json"
-	"frdocker/constants"
-	"frdocker/types"
-	"frdocker/utils/logger"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/types"
+	"gitee.com/zengtao321/frdocker/utils/logger"
 )
 
 func HttpRequest(url string, method string, result interface{}) {

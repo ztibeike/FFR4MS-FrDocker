@@ -1,12 +1,12 @@
 package router
 
 import (
-	"frdocker/settings"
-	"frdocker/web/controller/command"
-	"frdocker/web/controller/container"
-	"frdocker/web/controller/perf"
-	"frdocker/web/controller/user"
-	"frdocker/web/filter"
+	"gitee.com/zengtao321/frdocker/settings"
+	"gitee.com/zengtao321/frdocker/web/controller/command"
+	"gitee.com/zengtao321/frdocker/web/controller/container"
+	"gitee.com/zengtao321/frdocker/web/controller/perf"
+	"gitee.com/zengtao321/frdocker/web/controller/user"
+	"gitee.com/zengtao321/frdocker/web/filter"
 
 	"github.com/gin-gonic/gin"
 )

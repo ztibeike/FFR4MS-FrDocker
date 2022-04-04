@@ -1,7 +1,7 @@
 package frecovery
 
 import (
-	"frdocker/db"
+	"gitee.com/zengtao321/frdocker/db"
 
 	"github.com/google/gopacket/pcap"
 )

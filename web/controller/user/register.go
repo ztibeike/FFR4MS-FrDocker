@@ -1,10 +1,11 @@
 package user
 
 import (
-	"frdocker/db"
-	"frdocker/web/entity"
-	"frdocker/web/entity/R"
 	"net/http"
+
+	"gitee.com/zengtao321/frdocker/db"
+	"gitee.com/zengtao321/frdocker/web/entity"
+	"gitee.com/zengtao321/frdocker/web/entity/R"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

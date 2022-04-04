@@ -1,6 +1,6 @@
 package models
 
-import "frdocker/types"
+import "gitee.com/zengtao321/frdocker/types"
 
 type NetWork struct {
 	Id   string `bson:"id"`

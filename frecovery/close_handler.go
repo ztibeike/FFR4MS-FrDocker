@@ -1,14 +1,15 @@
 package frecovery
 
 import (
-	"frdocker/constants"
-	"frdocker/models"
-	"frdocker/types"
-	"frdocker/utils/logger"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/models"
+	"gitee.com/zengtao321/frdocker/types"
+	"gitee.com/zengtao321/frdocker/utils/logger"
 
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
