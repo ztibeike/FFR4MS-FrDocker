@@ -13,7 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Mgo struct {
@@ -61,17 +60,8 @@ func (m *Mgo) Count() (string, int64) {
 // Skip 跳过
 // Limit 读取数量
 // Sort  排序   1 倒叙 ， -1 正序
-func (m *Mgo) FindAll(Skip, Limit int64, sort int) *mongo.Cursor {
-	SORT := bson.D{{Key: "_id", Value: sort}}
-	filter := bson.D{{}}
-
-	// where
-	findOptions := options.Find()
-	findOptions.SetSort(SORT)
-	findOptions.SetLimit(Limit)
-	findOptions.SetSkip(Skip)
-
-	cur, err := m.collection.Find(context.TODO(), filter, findOptions)
+func (m *Mgo) FindAll() *mongo.Cursor {
+	cur, err := m.collection.Find(context.TODO(), bson.D{})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -100,8 +90,7 @@ func (m *Mgo) ParsingId(result string) (time.Time, uint64) {
 }
 
 // 删除
-func (m *Mgo) Delete(key string, value interface{}) int64 {
-	filter := bson.D{{Key: key, Value: value}}
+func (m *Mgo) Delete(filter interface{}) int64 {
 	count, err := m.collection.DeleteOne(context.TODO(), filter, nil)
 	if err != nil {
 		fmt.Println(err)

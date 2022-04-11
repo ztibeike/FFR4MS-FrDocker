@@ -2,7 +2,9 @@ package filter
 
 import (
 	"net/http"
+	"strings"
 
+	"gitee.com/zengtao321/frdocker/utils/logger"
 	"gitee.com/zengtao321/frdocker/web/entity/R"
 	"gitee.com/zengtao321/frdocker/web/service/token"
 
@@ -12,7 +14,7 @@ import (
 func UserAuthFilter() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uri := c.Request.URL.String()
-		if uri == "/user/login" {
+		if uri == "/user/login" || uri == "/user/logout" {
 			c.Next()
 			return
 		}
@@ -22,8 +24,18 @@ func UserAuthFilter() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		_, err := token.ParseToken(tokenStr[0])
+		claims, err := token.ParseToken(tokenStr[0])
 		if err != nil {
+			if strings.Contains(err.Error(), "expired") {
+				newToken, _ := token.RefreshToken(claims)
+				if newToken != "" {
+					logger.Info(nil, "Generate new token: %s\n", newToken)
+					c.Request.Header.Set("Authorization", newToken)
+					c.Header("refresh-token", newToken)
+					c.Next()
+					return
+				}
+			}
 			c.JSON(http.StatusUnauthorized, R.Error(http.StatusUnauthorized, err.Error(), nil))
 			c.Abort()
 			return

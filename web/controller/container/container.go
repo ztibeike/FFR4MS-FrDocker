@@ -17,7 +17,20 @@ func GetContainer(c *gin.Context) {
 		mp := constants.IPServiceContainerMap.Items()
 		var containers []*types.Container
 		for _, v := range mp {
-			containers = append(containers, v.(*types.Container))
+			_container, _ := v.(*types.Container)
+			container := &types.Container{
+				IP:      _container.IP,
+				Port:    _container.Port,
+				Group:   _container.Group,
+				Gateway: _container.Gateway,
+				Leaf:    _container.Leaf,
+				Health:  _container.Health,
+				ID:      _container.ID,
+				Name:    _container.Name,
+				Calls:   _container.Calls,
+				Entry:   _container.Entry,
+			}
+			containers = append(containers, container)
 		}
 		c.JSON(http.StatusOK, R.OK(containers))
 		return

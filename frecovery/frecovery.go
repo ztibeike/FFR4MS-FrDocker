@@ -17,8 +17,8 @@ import (
 )
 
 func RunFrecovery(ifaceName string, confPath string) {
-	logger.Info("Fr-Docker Started!\n")
-	defer logger.Info("Fr-Docker Stopped!\n")
+	logger.Info(nil, "Fr-Docker Started!\n")
+	defer logger.Info(nil, "Fr-Docker Stopped!\n")
 	constants.Network = ifaceName
 	constants.RegistryURL = confPath
 	var err error
@@ -30,12 +30,12 @@ func RunFrecovery(ifaceName string, confPath string) {
 	pcapHandler, err = pcap.OpenLive(ifaceName, 1600, true, pcap.BlockForever)
 	var filter = "tcp"
 	if err != nil {
-		logger.Fatalln(err)
+		logger.Fatalln(nil, err)
 	}
 	if err = pcapHandler.SetBPFFilter(filter); err != nil {
-		logger.Fatalln(err)
+		logger.Fatalln(nil, err)
 	}
-	logger.Info("Start Capturing Packets on Interface: %s\n", ifaceName)
+	logger.Info(nil, "Start Capturing Packets on Interface: %s\n", ifaceName)
 	packetSource := gopacket.NewPacketSource(pcapHandler, pcapHandler.LinkType())
 	packets := packetSource.Packets()
 
@@ -97,7 +97,7 @@ func RunFrecovery(ifaceName string, confPath string) {
 		if httpInfo == nil {
 			httpInfo, err = utils.GetHttpInfo(packet, tcp)
 			if err != nil {
-				logger.Errorln(err)
+				logger.Errorln(nil, err)
 				continue
 			}
 		}
@@ -108,7 +108,9 @@ func RunFrecovery(ifaceName string, confPath string) {
 		} else {
 			currentIP = dstIP
 		}
-		trafficChan <- currentIP
+		if httpInfo.DstIP == currentIP && httpInfo.Type == "REQUEST" {
+			trafficChan <- currentIP
+		}
 		obj, _ := constants.IPServiceContainerMap.Get(currentIP)
 		var currentContainer = obj.(*types.Container)
 		constants.IPChanMapMutex.Lock()
@@ -128,7 +130,7 @@ func RunFrecovery(ifaceName string, confPath string) {
 		}
 		constants.IPChanMapMutex.Unlock()
 	}
-	logger.Info("Closing All Channels......\n")
+	logger.Info(nil, "Closing All Channels......\n")
 	cancel()
 	for IP, ch := range constants.IPChanMap {
 		close(ch)

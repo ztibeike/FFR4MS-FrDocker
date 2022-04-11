@@ -7,4 +7,5 @@ func RegisterRouter(r *gin.Engine) {
 	r.GET("/container/calls", GetContainerCallChain)
 	r.GET("/container/traffic", GetContainerTraffic)
 	r.GET("/container/logs", GetContainerLogs)
+	r.GET("/container/monitorLogs", GetMonitorLogs)
 }

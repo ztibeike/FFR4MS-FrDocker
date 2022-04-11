@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 
 	"gitee.com/zengtao321/frdocker/constants"
@@ -20,13 +21,13 @@ func HttpRequest(url string, method string, result interface{}) {
 		response, err = http.Post(url, "application/json", nil)
 	}
 	if err != nil {
-		logger.Fatalln("Bad Eureka URL: ", url)
+		logger.Fatalln(nil, "Bad Eureka URL: ", url)
 	}
 	body, _ := ioutil.ReadAll(response.Body)
 	response.Body.Close()
 	err = json.Unmarshal(body, result)
 	if err != nil {
-		logger.Fatalln("Bad Eureka Response")
+		logger.Fatalln(nil, "Bad Eureka Response")
 	}
 }
 
@@ -73,4 +74,34 @@ func GetConfigFromEureka(confPath string) []*types.Container {
 		constants.IPAllMSMap.Set(service[:colon], "SERVICE:"+container.Group)
 	}
 	return containers
+}
+
+func PathExists(path string) bool {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true
+	}
+	if os.IsNotExist(err) {
+		return false
+	}
+	return false
+}
+
+// Capitalize 字符首字母大写
+func Capitalize(str string) string {
+	var upperStr string
+	vv := []rune(str) // 后文有介绍
+	for i := 0; i < len(vv); i++ {
+		if i == 0 {
+			if vv[i] >= 97 && vv[i] <= 122 { // 后文有介绍
+				vv[i] -= 32 // string的码表相差32位
+				upperStr += string(vv[i])
+			} else {
+				return str
+			}
+		} else {
+			upperStr += string(vv[i])
+		}
+	}
+	return upperStr
 }

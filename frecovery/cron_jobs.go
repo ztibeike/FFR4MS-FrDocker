@@ -43,6 +43,7 @@ func CronSaveTraffic(ctx context.Context, trafficChan chan string) {
 				Day:    t.Day(),
 				Hour:   t.Hour(),
 				Minute: t.Minute(),
+				Level:  settings.CRON_LEVEL,
 				Number: atomic.LoadInt64(trafficCountMap[container.IP]),
 			}
 			if containerTraffic == nil {
@@ -62,6 +63,7 @@ func CronSaveTraffic(ctx context.Context, trafficChan chan string) {
 					start = len(_traffics) - settings.CRON_TRAFFIC_LEN + 1
 				}
 				containerTraffic.Traffic = append(containerTraffic.Traffic[start:], traffic)
+				containerTraffic.Entry = container.Entry
 				trafficMgo.ReplaceOne(filter, containerTraffic)
 			}
 			atomic.StoreInt64(trafficCountMap[container.IP], 0)

@@ -28,9 +28,9 @@ func GetContainerPerformance(c *gin.Context) {
 	}
 	containerPerfInfo := &dto.ContainerPerfDTO{
 		Memory: &dto.MemoryInfo{
-			Total:          units.BytesSize(statsEntry.MemoryLimit),
-			Used:           units.BytesSize(statsEntry.Memory),
-			UsedPercentage: statsEntry.MemoryPercentage,
+			Total:      units.BytesSize(statsEntry.MemoryLimit),
+			Used:       units.BytesSize(statsEntry.Memory),
+			Percentage: statsEntry.MemoryPercentage,
 		},
 		Cpu: &dto.CpuInfo{
 			Percentage: statsEntry.CPUPercentage,

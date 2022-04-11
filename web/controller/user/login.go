@@ -38,3 +38,7 @@ func LoginController(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, R.OK(gin.H{"token": token}))
 }
+
+func LogoutController(c *gin.Context) {
+	c.JSON(http.StatusOK, R.OK(nil))
+}

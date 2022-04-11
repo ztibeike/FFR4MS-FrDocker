@@ -22,15 +22,16 @@ func SetupCloseHandler(ifaceName string, wg *sync.WaitGroup) {
 	<-sigalChan
 	ClosePcapHandler(ifaceName)
 	SaveContainerInfo(ifaceName)
+	logger.Close()
 }
 
 func ClosePcapHandler(ifaceName string) {
 	pcapHandler.Close()
-	logger.Info("Stop capturing packets on interface: %s\n", ifaceName)
+	logger.Info(nil, "Stop capturing packets on interface: %s\n", ifaceName)
 }
 
 func SaveContainerInfo(ifaceName string) {
-	logger.Info("Saving All Containers Info & States......\n")
+	logger.Info(nil, "Saving All Containers Info & States......\n")
 	var network *models.NetWork
 	filter := bson.D{
 		{Key: "name", Value: ifaceName},

@@ -34,14 +34,20 @@ func GenerateToken(userId string, userRole string) (string, error) {
 
 func ParseToken(tokenStr string) (*Claims, error) {
 	claims := &Claims{}
-	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+	_, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
 		return jwtSecret, nil
 	})
-	if err != nil {
-		return nil, err
+	return claims, err
+}
+
+func RefreshToken(claims *Claims) (string, error) {
+	if withinLimit(claims.ExpiresAt, 600) {
+		return GenerateToken(claims.UserId, claims.UserRole)
 	}
-	if !token.Valid {
-		return nil, errors.New("token is invalid")
-	}
-	return claims, nil
+	return "", errors.New("token is expired")
+}
+
+func withinLimit(s int64, l int64) bool {
+	e := time.Now().Unix()
+	return e-s < l
 }

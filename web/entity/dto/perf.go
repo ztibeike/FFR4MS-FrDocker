@@ -16,10 +16,10 @@ type ContainerPerfDTO struct {
 }
 
 type MemoryInfo struct {
-	Total          string  `json:"total"`
-	Available      string  `json:"available"`
-	Used           string  `json:"used"`
-	UsedPercentage float64 `json:"usedPercentage"`
+	Total      string  `json:"total"`
+	Available  string  `json:"available"`
+	Used       string  `json:"used"`
+	Percentage float64 `json:"percentage"`
 }
 
 type CpuInfo struct {
@@ -30,16 +30,17 @@ type CpuInfo struct {
 }
 
 type DiskInfo struct {
-	Total          string  `json:"total"`
-	Free           string  `json:"free"`
-	Used           string  `json:"used"`
-	UsedPercentage float64 `json:"usedPercentage"`
+	Total      string  `json:"total"`
+	Available  string  `json:"available"`
+	Used       string  `json:"used"`
+	Percentage float64 `json:"percentage"`
 }
 
 type HostInfo struct {
 	PlatForm      string `json:"platForm"`
 	Kernel        string `json:"kernel"`
 	DockerVersion string `json:"dockerVersion"`
+	BootTime      string `json:"bootTime"`
 }
 
 type MicroServiceSytemInfo struct {

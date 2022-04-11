@@ -9,5 +9,6 @@ import (
 func RegisterRouter(r *gin.Engine) {
 	r.POST("/user/register", filter.AdminAuthFilter(), RegisterController)
 	r.POST("/user/login", LoginController)
-	r.GET("/user/info")
+	r.POST("/user/logout", LogoutController)
+	r.GET("/user/info", GetUserInfo)
 }

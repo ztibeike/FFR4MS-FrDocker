@@ -3,6 +3,7 @@ package perf
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -74,10 +75,10 @@ func GetSystemPerformance(c *gin.Context) {
 	wg.Wait()
 	systemInfo := &dto.SystemPerfDTO{
 		Memory: &dto.MemoryInfo{
-			Total:          units.BytesSize(float64(memory.Total)),
-			Available:      units.BytesSize(float64(memory.Available)),
-			Used:           units.BytesSize(float64(memory.Used)),
-			UsedPercentage: memory.UsedPercent,
+			Total:      units.BytesSize(float64(memory.Total)),
+			Available:  units.BytesSize(float64(memory.Available)),
+			Used:       units.BytesSize(float64(memory.Used)),
+			Percentage: memory.UsedPercent,
 		},
 		Cpu: &dto.CpuInfo{
 			PhysicalCount: cpuPhysicalCount,
@@ -86,17 +87,38 @@ func GetSystemPerformance(c *gin.Context) {
 			ModelName:     cpuInfo[0].ModelName,
 		},
 		Disk: &dto.DiskInfo{
-			Total:          units.BytesSize(float64(diskInfo.Total)),
-			Free:           units.BytesSize(float64(diskInfo.Free)),
-			Used:           units.BytesSize(float64(diskInfo.Used)),
-			UsedPercentage: diskInfo.UsedPercent,
+			Total:      units.BytesSize(float64(diskInfo.Total)),
+			Available:  units.BytesSize(float64(diskInfo.Free)),
+			Used:       units.BytesSize(float64(diskInfo.Used)),
+			Percentage: diskInfo.UsedPercent,
 		},
 		Host: &dto.HostInfo{
-			PlatForm:      fmt.Sprintf("%s %s", hostInfo.Platform, hostInfo.PlatformVersion),
-			Kernel:        fmt.Sprintf("%s %s", hostInfo.OS, hostInfo.KernelVersion),
+			PlatForm:      GeneratePlatForm(hostInfo.Platform, hostInfo.PlatformVersion, hostInfo.KernelArch),
+			Kernel:        fmt.Sprintf("%s %s", utils.Capitalize(hostInfo.OS), hostInfo.KernelVersion),
 			DockerVersion: utils.GetDockerVersion(),
+			BootTime:      GenerateBootUpTime(hostInfo.BootTime),
 		},
 		MSSystem: microServiceSytemInfo,
 	}
 	c.JSON(http.StatusOK, R.OK(systemInfo))
+}
+
+func GeneratePlatForm(platform, version, arch string) string {
+	var lts = "16.04;18.04;20.04;22.04"
+	var ltsStr string
+	if platform == "ubuntu" && strings.Contains(lts, version) {
+		ltsStr = "LTS "
+	}
+	res := fmt.Sprintf("%s %s %s%s", utils.Capitalize(platform), version, ltsStr, arch)
+	return res
+}
+
+func GenerateBootUpTime(duration uint64) string {
+	t := time.Since(time.Unix(int64(duration), 0))
+	minutes := int64(t.Minutes())
+	hours := minutes / 60
+	minutes %= 60
+	days := hours / 24
+	hours = hours % 24
+	return fmt.Sprintf("%d days %d hours %d minutes", days, hours, minutes)
 }

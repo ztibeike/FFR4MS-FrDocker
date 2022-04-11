@@ -12,9 +12,9 @@ func CorsFilter() gin.HandlerFunc {
 		//准许跨域请求网站,多个使用,分开,限制使用*
 		AllowOrigins: []string{"*"},
 		//准许使用的请求方式
-		AllowMethods: []string{"PUT", "PATCH", "POST", "GET", "DELETE"},
+		AllowMethods: []string{"PUT", "PATCH", "POST", "GET", "DELETE", "OPTIONS"},
 		//准许使用的请求表头
-		AllowHeaders: []string{"Origin", "Authorization", "Content-Type"},
+		AllowHeaders: []string{"Origin", "Authorization", "Content-Type", "Content-Length"},
 		//显示的请求表头
 		ExposeHeaders: []string{"Content-Type"},
 		//凭证共享,确定共享

@@ -39,6 +39,7 @@ func GetContainerTraffic(c *gin.Context) {
 				Day:    containerTraffics[0].Traffic[maxLen-k].Day,
 				Hour:   containerTraffics[0].Traffic[maxLen-k].Hour,
 				Minute: containerTraffics[0].Traffic[maxLen-k].Minute,
+				Level:  containerTraffics[0].Traffic[maxLen-k].Level,
 				Number: 0,
 			}
 			for _, containerTraffic := range containerTraffics {

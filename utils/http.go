@@ -46,11 +46,11 @@ func (h *HttpStream) Run() {
 			// We must read until we see an EOF... very important!
 			return
 		} else if err != nil {
-			logger.Errorln("Error reading stream", h.net, h.transport, ":", err)
+			logger.Errorln(nil, "Error reading stream", h.net, h.transport, ":", err)
 		} else {
 			bodyBytes := tcpreader.DiscardBytesToEOF(req.Body)
 			req.Body.Close()
-			logger.Errorln("Received request from stream", h.net, h.transport, ":", req, "with", bodyBytes, "bytes in request body")
+			logger.Errorln(nil, "Received request from stream", h.net, h.transport, ":", req, "with", bodyBytes, "bytes in request body")
 		}
 	}
 }

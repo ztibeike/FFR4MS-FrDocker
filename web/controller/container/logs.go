@@ -1,9 +1,15 @@
 package container
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os/exec"
+	"strings"
 
 	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/settings"
 	"gitee.com/zengtao321/frdocker/types"
 	"gitee.com/zengtao321/frdocker/utils"
 	"gitee.com/zengtao321/frdocker/web/entity/R"
@@ -19,7 +25,7 @@ func GetContainerLogs(c *gin.Context) {
 	}
 	tail := c.Query("tail")
 	if tail == "" {
-		tail = "all"
+		tail = "100"
 	}
 	obj, _ := constants.IPServiceContainerMap.Get(IP)
 	container := obj.(*types.Container)
@@ -29,4 +35,38 @@ func GetContainerLogs(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, R.OK(containerLogs))
+}
+
+type MonitorLog struct {
+	Level string `json:"level"`
+	Time  string `json:"time"`
+	Msg   string `json:"msg"`
+}
+
+func GetMonitorLogs(c *gin.Context) {
+	IP := c.Query("ip")
+	if IP == "" || !constants.IPServiceContainerMap.Has(IP) {
+		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "No Such IP!", nil))
+		return
+	}
+	tail := c.Query("tail")
+	if tail == "" {
+		tail = "100"
+	}
+	fileName := fmt.Sprintf("%s/%s-%s.log", settings.LOG_FILE_DIR, constants.Network, IP)
+	var logs string
+	if utils.PathExists(fileName) {
+		cmd := exec.Command("/bin/bash", "-c", fmt.Sprintf("tail -n %s %s", tail, fileName))
+		out, _ := cmd.StdoutPipe()
+		if err := cmd.Start(); err == nil {
+			bytes, _ := ioutil.ReadAll(out)
+			tempLogs := strings.Split(string(bytes), "\n")
+			for _, tempLog := range tempLogs {
+				var monitorLog MonitorLog
+				_ = json.Unmarshal([]byte(tempLog), &monitorLog)
+				logs += fmt.Sprintf("[%s] [%s] %s\n", strings.ToUpper(monitorLog.Level), monitorLog.Time, monitorLog.Msg)
+			}
+		}
+	}
+	c.JSON(http.StatusOK, R.OK(logs))
 }

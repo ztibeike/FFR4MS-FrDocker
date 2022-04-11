@@ -37,10 +37,11 @@ func (c ContainerTrafficArray) Less(i, j int) bool {
 }
 
 type Traffic struct {
-	Year   int   `bson:"year" json:"year"`
-	Month  int   `bson:"month" json:"month"`
-	Day    int   `bson:"day" json:"day"`
-	Hour   int   `bson:"hour" json:"hour"`
-	Minute int   `bson:"minute" json:"minute"`
-	Number int64 `bson:"number" json:"number"`
+	Year   int    `bson:"year" json:"year"`
+	Month  int    `bson:"month" json:"month"`
+	Day    int    `bson:"day" json:"day"`
+	Hour   int    `bson:"hour" json:"hour"`
+	Minute int    `bson:"minute" json:"minute"`
+	Number int64  `bson:"number" json:"number"`
+	Level  string `bson:"level" json:"level"`
 }

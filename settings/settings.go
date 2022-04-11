@@ -11,3 +11,5 @@ const CRON_LEVEL = "MINUTE"
 
 // 定时任务记录长度
 const CRON_TRAFFIC_LEN = 60
+
+const LOG_FILE_DIR = "/var/log/frdocker"
