@@ -29,12 +29,14 @@ func AddUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "Username already exists!", nil))
 		return
 	}
-	user.Role = "USER"
+	if user.Role == "" {
+		user.Role = "USER"
+	}
 	cryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	user.Password = string(cryptedPassword)
 	user.Id = uuid.New().String()
 	userMgo.InsertOne(user)
-	c.JSON(http.StatusOK, R.OK(nil))
+	c.JSON(http.StatusOK, R.OK(user))
 }
 
 func GetUserList(c *gin.Context) {
@@ -44,24 +46,23 @@ func GetUserList(c *gin.Context) {
 }
 
 func DeleteUser(c *gin.Context) {
-	var user entity.UserEntity
-	if err := c.ShouldBind(&user); err != nil {
+	var users []entity.UserEntity
+	if err := c.ShouldBindJSON(&users); err != nil {
 		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "", nil))
 		return
 	}
 	tokenStr := c.Request.Header["Authorization"][0]
 	claims, _ := token.ParseToken(tokenStr)
 	currentUserId := claims.UserId
-	if currentUserId == user.Id {
-		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "Cannot delete yourself!", nil))
+	var matchCount = 0
+	for _, user := range users {
+		if currentUserId == user.Id {
+			continue
+		}
+		var filter = bson.D{{Key: "id", Value: user.Id}}
+		matchCount += int(userMgo.Delete(filter))
 	}
-	var filter = bson.D{{Key: "id", Value: user.Id}}
-	deletecCount := userMgo.Delete(filter)
-	if deletecCount == 0 {
-		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "No such user!", nil))
-		return
-	}
-	c.JSON(http.StatusOK, R.OK(nil))
+	c.JSON(http.StatusOK, R.OK(matchCount))
 }
 
 func UpdateUser(c *gin.Context) {

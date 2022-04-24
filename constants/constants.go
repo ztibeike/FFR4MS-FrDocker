@@ -24,3 +24,6 @@ var ServiceGroupMap = cmap.New()
 // 服务IP与服务监控协程通道的映射
 var IPChanMap = make(map[string]chan *types.HttpInfo)
 var IPChanMapMutex sync.Mutex
+
+var DeleteContainerChan = make(chan string, 1)
+var AddContainerChan = make(chan string, 1)

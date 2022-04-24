@@ -278,12 +278,16 @@ func GatewayReplaceInstance(container *types.Container) {
 
 func SetStateRecord(state *types.State) {
 	recordLen := len(state.Record)
-	start := 0
 	if recordLen >= settings.STATE_RECORD_LEN {
-		start = recordLen - settings.STATE_RECORD_LEN + 1
+		start := recordLen - settings.STATE_RECORD_LEN + 1
+		state.Record = append(state.Record[start:], &types.StateRecord{
+			Ecc:       state.Ecc,
+			Threshold: state.Threshold,
+		})
+	} else {
+		state.Record = append(state.Record, &types.StateRecord{
+			Ecc:       state.Ecc,
+			Threshold: state.Threshold,
+		})
 	}
-	state.Record = append(state.Record[start:], &types.StateRecord{
-		Ecc:       state.Ecc,
-		Threshold: state.Threshold,
-	})
 }

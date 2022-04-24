@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Mgo struct {
@@ -128,7 +129,9 @@ func (m *Mgo) UpdateMany(filter primitive.D, update interface{}) (updateResult *
 }
 
 func (m *Mgo) ReplaceOne(filter, replace interface{}) (updateResult *mongo.UpdateResult) {
-	updateResult, err := m.collection.ReplaceOne(context.TODO(), filter, replace)
+	opts := &options.ReplaceOptions{}
+	opts.SetUpsert(true)
+	updateResult, err := m.collection.ReplaceOne(context.TODO(), filter, replace, opts)
 	if err != nil {
 		log.Fatal(err)
 	}

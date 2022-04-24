@@ -7,7 +7,7 @@ import (
 
 // 微服务/容器
 type Container struct {
-	IP      string              `bson:"ip" json:"ip"`
+	IP      string              `bson:"ip" json:"ip" binding:"required"`
 	Port    string              `bson:"port" json:"port"`
 	Group   string              `bson:"group" json:"group"`
 	Gateway string              `bson:"gateway" json:"gateway"`

@@ -14,6 +14,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+var trafficCountMap = make(map[string]*int64)
+
 func CronSaveTraffic(ctx context.Context, trafficChan chan string) {
 	var spec string
 	if settings.CRON_LEVEL == "HOUR" {
@@ -23,7 +25,34 @@ func CronSaveTraffic(ctx context.Context, trafficChan chan string) {
 	} else {
 		return
 	}
-	trafficCountMap := make(map[string]*int64)
+	var c = GenerateCronJobs(spec)
+	go c.Start()
+	for {
+		select {
+		case <-constants.DeleteContainerChan:
+			{
+				c.Stop()
+				c = GenerateCronJobs(spec)
+				go c.Start()
+			}
+		case <-constants.AddContainerChan:
+			{
+				c.Stop()
+				c = GenerateCronJobs(spec)
+				go c.Start()
+			}
+		case IP := <-trafficChan:
+			{
+				atomic.AddInt64(trafficCountMap[IP], 1)
+			}
+		case <-ctx.Done():
+			c.Stop()
+			return
+		}
+	}
+}
+
+func GenerateCronJobs(spec string) *cron.Cron {
 	c := cron.New()
 	for _, obj := range constants.IPServiceContainerMap.Items() {
 		container := obj.(*types.Container)
@@ -69,18 +98,7 @@ func CronSaveTraffic(ctx context.Context, trafficChan chan string) {
 			atomic.StoreInt64(trafficCountMap[container.IP], 0)
 		})
 	}
-	go c.Start()
-	for {
-		select {
-		case IP := <-trafficChan:
-			{
-				atomic.AddInt64(trafficCountMap[IP], 1)
-			}
-		case <-ctx.Done():
-			c.Stop()
-			return
-		}
-	}
+	return c
 }
 
 func CronSaveContainerInfo(ctx context.Context, ifaceName string) {
