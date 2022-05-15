@@ -5,7 +5,7 @@ import (
 	"gitee.com/zengtao321/frdocker/web/router"
 )
 
-func SetupWebHander() {
+func SetupWebHandler() {
 	r := router.SetupRouter()
 	r.Run(":" + settings.WEB_HANDLER_PORT)
 }

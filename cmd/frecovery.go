@@ -25,6 +25,6 @@ var frecoveryCmd = &cobra.Command{
 }
 
 func executeFrecovery(args []string) {
-	go web.SetupWebHander()
+	go web.SetupWebHandler()
 	frecovery.RunFrecovery(args[0], args[1])
 }

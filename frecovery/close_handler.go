@@ -17,9 +17,9 @@ import (
 
 func SetupCloseHandler(ifaceName string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	sigalChan := make(chan os.Signal, 1)
-	signal.Notify(sigalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGPIPE, syscall.SIGABRT, syscall.SIGQUIT)
-	<-sigalChan
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGPIPE, syscall.SIGABRT, syscall.SIGQUIT)
+	<-signalChan
 	ClosePcapHandler(ifaceName)
 	SaveContainerInfo(ifaceName)
 	logger.Close()
