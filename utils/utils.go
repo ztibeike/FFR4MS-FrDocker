@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/commons"
 	"gitee.com/zengtao321/frdocker/types"
 	"gitee.com/zengtao321/frdocker/utils/logger"
 )
@@ -40,12 +40,12 @@ func GetConfigFromEureka(confPath string) []*types.Container {
 		gatewayInfo := types.GatewayActuatorInfo{}
 		HttpRequest(url, "GET", &gatewayInfo)
 		colon := strings.Index(gateway, ":")
-		constants.IPAllMSMap.Set(gateway[:colon], "GATEWAY:"+gatewayInfo.Getway)
+		commons.IPAllMSMap.Set(gateway[:colon], "GATEWAY:"+gatewayInfo.Getway)
 		serviceGroup := &types.ServiceGroup{
 			Gateway: gateway,
 			Entry:   false,
 		}
-		constants.ServiceGroupMap.Set(gatewayInfo.Getway, serviceGroup)
+		commons.ServiceGroupMap.Set(gatewayInfo.Getway, serviceGroup)
 	}
 	var containers []*types.Container
 	var obj interface{}
@@ -57,7 +57,7 @@ func GetConfigFromEureka(confPath string) []*types.Container {
 		serviceHealthURL := "http://" + service + "/actuator/health"
 		HttpRequest(serviceHealthURL, "GET", &serviceHealth)
 		colon := strings.Index(service, ":")
-		obj, _ = constants.ServiceGroupMap.Get(resp.ArrayGroup[idx])
+		obj, _ = commons.ServiceGroupMap.Get(resp.ArrayGroup[idx])
 		serviceGroup := obj.(*types.ServiceGroup)
 		serviceGroup.Services = append(serviceGroup.Services, service[:colon])
 		serviceGroup.Leaf = (serviceInfo.Leaf == 1)
@@ -70,8 +70,8 @@ func GetConfigFromEureka(confPath string) []*types.Container {
 			Health:  strings.ToUpper(serviceHealth.Status) == "UP",
 		}
 		containers = append(containers, container)
-		constants.IPServiceContainerMap.Set(container.IP, container)
-		constants.IPAllMSMap.Set(service[:colon], "SERVICE:"+container.Group)
+		commons.IPServiceContainerMap.Set(container.IP, container)
+		commons.IPAllMSMap.Set(service[:colon], "SERVICE:"+container.Group)
 	}
 	return containers
 }

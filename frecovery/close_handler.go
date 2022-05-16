@@ -6,7 +6,7 @@ import (
 	"sync"
 	"syscall"
 
-	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/commons"
 	"gitee.com/zengtao321/frdocker/models"
 	"gitee.com/zengtao321/frdocker/types"
 	"gitee.com/zengtao321/frdocker/utils/logger"
@@ -44,7 +44,7 @@ func SaveContainerInfo(ifaceName string) {
 		network.Id = id.String()
 		networkMgo.InsertOne(network)
 		var dbContainers []interface{}
-		for _, obj := range constants.IPServiceContainerMap.Items() {
+		for _, obj := range commons.IPServiceContainerMap.Items() {
 			container := obj.(*types.Container)
 			dbContainer := &models.Container{
 				Container: container,
@@ -54,7 +54,7 @@ func SaveContainerInfo(ifaceName string) {
 		}
 		containerMgo.InsertMany(dbContainers)
 	} else {
-		for _, obj := range constants.IPServiceContainerMap.Items() {
+		for _, obj := range commons.IPServiceContainerMap.Items() {
 			container := obj.(*types.Container)
 			dbContainer := &models.Container{
 				Container: container,

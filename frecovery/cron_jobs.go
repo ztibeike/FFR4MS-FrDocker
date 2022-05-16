@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/commons"
 	"gitee.com/zengtao321/frdocker/models"
 	"gitee.com/zengtao321/frdocker/settings"
 	"gitee.com/zengtao321/frdocker/types"
@@ -29,13 +29,13 @@ func CronSaveTraffic(ctx context.Context, trafficChan chan string) {
 	go c.Start()
 	for {
 		select {
-		case <-constants.DeleteContainerChan:
+		case <-commons.DeleteContainerChan:
 			{
 				c.Stop()
 				c = GenerateCronJobs(spec)
 				go c.Start()
 			}
-		case <-constants.AddContainerChan:
+		case <-commons.AddContainerChan:
 			{
 				c.Stop()
 				c = GenerateCronJobs(spec)
@@ -54,7 +54,7 @@ func CronSaveTraffic(ctx context.Context, trafficChan chan string) {
 
 func GenerateCronJobs(spec string) *cron.Cron {
 	c := cron.New()
-	for _, obj := range constants.IPServiceContainerMap.Items() {
+	for _, obj := range commons.IPServiceContainerMap.Items() {
 		container := obj.(*types.Container)
 		var trafficCount int64 = 0
 		trafficCountMap[container.IP] = &trafficCount
@@ -62,7 +62,7 @@ func GenerateCronJobs(spec string) *cron.Cron {
 			t := time.Now()
 			var containerTraffic *models.ContainerTraffic
 			var filter = bson.D{
-				{Key: "network", Value: constants.Network},
+				{Key: "network", Value: commons.Network},
 				{Key: "ip", Value: container.IP},
 			}
 			trafficMgo.FindOne(filter).Decode(&containerTraffic)
@@ -77,7 +77,7 @@ func GenerateCronJobs(spec string) *cron.Cron {
 			}
 			if containerTraffic == nil {
 				containerTraffic = &models.ContainerTraffic{
-					Network: constants.Network,
+					Network: commons.Network,
 					IP:      container.IP,
 					Port:    container.Port,
 					Group:   container.Group,

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/commons"
 	"gitee.com/zengtao321/frdocker/db"
 	"gitee.com/zengtao321/frdocker/types"
 	"gitee.com/zengtao321/frdocker/utils"
@@ -29,7 +29,7 @@ func AddContainerController(c *gin.Context) {
 		Group:  addContainerDTO.ServiceGroup,
 		Health: true,
 	}
-	if constants.IPServiceContainerMap.Has(container.IP) {
+	if commons.IPServiceContainerMap.Has(container.IP) {
 		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "Service Already Exists!", nil))
 		return
 	}
@@ -38,19 +38,19 @@ func AddContainerController(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "Incorrect Service Info!", nil))
 		return
 	}
-	obj, _ := constants.ServiceGroupMap.Get(container.Group)
+	obj, _ := commons.ServiceGroupMap.Get(container.Group)
 	serviceGroup := obj.(*types.ServiceGroup)
 	container.Leaf = serviceGroup.Leaf
 	container.Entry = serviceGroup.Entry
-	obj, _ = constants.IPServiceContainerMap.Get(serviceGroup.Services[0])
+	obj, _ = commons.IPServiceContainerMap.Get(serviceGroup.Services[0])
 	otherContainer := obj.(*types.Container)
 	container.Calls = make([]string, len(otherContainer.Calls))
 	copy(container.Calls, otherContainer.Calls)
 	serviceGroup.Services = append(serviceGroup.Services, container.IP)
 	container.Gateway = serviceGroup.Gateway
-	constants.IPAllMSMap.Set(container.IP, "SERVICE:"+container.Group)
-	constants.IPServiceContainerMap.Set(container.IP, container)
-	constants.AddContainerChan <- container.IP
+	commons.IPAllMSMap.Set(container.IP, "SERVICE:"+container.Group)
+	commons.IPServiceContainerMap.Set(container.IP, container)
+	commons.AddContainerChan <- container.IP
 	logger.Info(container.IP, "[Add New Container] [Group(%s) IP(%s) Port(%s) ID(%s)]\n", container.Group, container.IP, container.Port, container.ID)
 	c.JSON(http.StatusOK, R.OK(container))
 }
@@ -61,14 +61,14 @@ func DeleteContainerController(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "", nil))
 		return
 	}
-	if !constants.IPServiceContainerMap.Has(deleteContainer.IP) {
+	if !commons.IPServiceContainerMap.Has(deleteContainer.IP) {
 		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "", nil))
 		return
 	}
-	obj, _ := constants.IPServiceContainerMap.Get(deleteContainer.IP)
+	obj, _ := commons.IPServiceContainerMap.Get(deleteContainer.IP)
 	container := obj.(*types.Container)
 	ConstantsDelete(container)
-	constants.DeleteContainerChan <- deleteContainer.IP
+	commons.DeleteContainerChan <- deleteContainer.IP
 	DataBaseDelete(deleteContainer.IP)
 	logger.Warn(container.IP, "[Delete Container] [Group(%s) IP(%s) Port(%s) ID(%s)]\n", container.Group, container.IP, container.Port, container.ID)
 	c.JSON(http.StatusOK, R.OK(nil))
@@ -83,11 +83,11 @@ func DeleteBatchContainerController(c *gin.Context) {
 	var matchCount = 0
 	var wg sync.WaitGroup
 	for _, deleteContainer := range deleteContainers {
-		if !constants.IPServiceContainerMap.Has(deleteContainer.IP) {
+		if !commons.IPServiceContainerMap.Has(deleteContainer.IP) {
 			continue
 		}
 		matchCount += 1
-		obj, _ := constants.IPServiceContainerMap.Get(deleteContainer.IP)
+		obj, _ := commons.IPServiceContainerMap.Get(deleteContainer.IP)
 		container := obj.(*types.Container)
 		wg.Add(1)
 		go func() {
@@ -96,7 +96,7 @@ func DeleteBatchContainerController(c *gin.Context) {
 		}()
 	}
 	wg.Wait()
-	constants.DeleteContainerChan <- "1"
+	commons.DeleteContainerChan <- "1"
 	for _, deleteContainer := range deleteContainers {
 		wg.Add(1)
 		container := deleteContainer
@@ -113,16 +113,16 @@ func ConstantsDelete(deleteContainer *types.Container) {
 	// 等待容器正在处理的请求结束
 	deleteContainer.Health = false
 	time.Sleep(500 * time.Millisecond)
-	constants.IPServiceContainerMap.Pop(deleteContainer.IP)
-	constants.IPChanMapMutex.Lock()
-	ch, ok := constants.IPChanMap[deleteContainer.IP]
+	commons.IPServiceContainerMap.Pop(deleteContainer.IP)
+	commons.IPChanMapMutex.Lock()
+	ch, ok := commons.IPChanMap[deleteContainer.IP]
 	if ok {
 		close(ch)
 	}
-	delete(constants.IPChanMap, deleteContainer.IP)
-	constants.IPChanMapMutex.Unlock()
-	constants.IPAllMSMap.Pop(deleteContainer.IP)
-	obj, _ := constants.ServiceGroupMap.Get(deleteContainer.Group)
+	delete(commons.IPChanMap, deleteContainer.IP)
+	commons.IPChanMapMutex.Unlock()
+	commons.IPAllMSMap.Pop(deleteContainer.IP)
+	obj, _ := commons.ServiceGroupMap.Get(deleteContainer.Group)
 	serviceGroup := obj.(*types.ServiceGroup)
 	pos := -1
 	for idx, service := range serviceGroup.Services {
@@ -140,12 +140,12 @@ func DataBaseDelete(IP string) {
 	containerMgo := db.GetContainerMgo()
 	trafficMgo := db.GetTrafficMgo()
 	var filter = bson.D{
-		{Key: "network", Value: constants.Network},
+		{Key: "network", Value: commons.Network},
 		{Key: "ip", Value: IP},
 	}
 	trafficMgo.Delete(filter)
 	filter = bson.D{
-		{Key: "network", Value: constants.Network},
+		{Key: "network", Value: commons.Network},
 		{Key: "container.ip", Value: IP},
 	}
 	containerMgo.Delete(filter)
@@ -157,11 +157,11 @@ func UpContainerController(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "", nil))
 		return
 	}
-	if !constants.IPServiceContainerMap.Has(upContainer.IP) {
+	if !commons.IPServiceContainerMap.Has(upContainer.IP) {
 		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "", nil))
 		return
 	}
-	obj, _ := constants.IPServiceContainerMap.Get(upContainer.IP)
+	obj, _ := commons.IPServiceContainerMap.Get(upContainer.IP)
 	container := obj.(*types.Container)
 	container.Health = true
 	container.States = nil

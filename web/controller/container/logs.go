@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/commons"
 	"gitee.com/zengtao321/frdocker/settings"
 	"gitee.com/zengtao321/frdocker/types"
 	"gitee.com/zengtao321/frdocker/utils"
@@ -19,7 +19,7 @@ import (
 
 func GetContainerLogs(c *gin.Context) {
 	IP := c.Query("ip")
-	if IP == "" || !constants.IPServiceContainerMap.Has(IP) {
+	if IP == "" || !commons.IPServiceContainerMap.Has(IP) {
 		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "No Such IP!", nil))
 		return
 	}
@@ -27,7 +27,7 @@ func GetContainerLogs(c *gin.Context) {
 	if tail == "" {
 		tail = "100"
 	}
-	obj, _ := constants.IPServiceContainerMap.Get(IP)
+	obj, _ := commons.IPServiceContainerMap.Get(IP)
 	container := obj.(*types.Container)
 	containerLogs, err := utils.GetContainerLogs(container.ID, tail)
 	if err != nil {
@@ -45,7 +45,7 @@ type MonitorLog struct {
 
 func GetMonitorLogs(c *gin.Context) {
 	IP := c.Query("ip")
-	if IP == "" || !constants.IPServiceContainerMap.Has(IP) {
+	if IP == "" || !commons.IPServiceContainerMap.Has(IP) {
 		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "No Such IP!", nil))
 		return
 	}
@@ -53,7 +53,7 @@ func GetMonitorLogs(c *gin.Context) {
 	if tail == "" {
 		tail = "100"
 	}
-	fileName := fmt.Sprintf("%s/%s-%s.log", settings.LOG_FILE_DIR, constants.Network, IP)
+	fileName := fmt.Sprintf("%s/%s-%s.log", settings.LOG_FILE_DIR, commons.Network, IP)
 	var logs string
 	if utils.PathExists(fileName) {
 		cmd := exec.Command("/bin/bash", "-c", fmt.Sprintf("tail -n %s %s", tail, fileName))

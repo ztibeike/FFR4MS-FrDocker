@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/commons"
 	"gitee.com/zengtao321/frdocker/types"
 	"gitee.com/zengtao321/frdocker/utils"
 	"gitee.com/zengtao321/frdocker/web/entity/R"
@@ -51,24 +51,24 @@ func GetSystemPerformance(c *gin.Context) {
 	}()
 	var microServiceSytemInfo *dto.MicroServiceSytemInfo
 	go func() {
-		total := constants.IPServiceContainerMap.Count()
+		total := commons.IPServiceContainerMap.Count()
 		healthCount := 0
-		for _, obj := range constants.IPServiceContainerMap.Items() {
+		for _, obj := range commons.IPServiceContainerMap.Items() {
 			container := obj.(*types.Container)
 			if container.Health {
 				healthCount += 1
 			}
 		}
 		microServiceSytemInfo = &dto.MicroServiceSytemInfo{
-			Network:       constants.Network,
-			Registry:      constants.RegistryURL,
-			ServiceGroups: constants.ServiceGroupMap.Count(),
+			Network:       commons.Network,
+			Registry:      commons.RegistryURL,
+			ServiceGroups: commons.ServiceGroupMap.Count(),
 			ServiceInstances: &dto.ServiceInstancesInfo{
 				Total:     total,
 				Healthy:   healthCount,
 				UnHealthy: total - healthCount,
 			},
-			Gateways: constants.ServiceGroupMap.Count(),
+			Gateways: commons.ServiceGroupMap.Count(),
 		}
 		wg.Done()
 	}()

@@ -1,4 +1,4 @@
-package constants
+package commons
 
 import (
 	"sync"

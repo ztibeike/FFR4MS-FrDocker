@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/commons"
 	"gitee.com/zengtao321/frdocker/settings"
 	"gitee.com/zengtao321/frdocker/types"
 	"gitee.com/zengtao321/frdocker/utils/logger"
@@ -18,7 +18,7 @@ import (
 
 func StateMonitor(IP string, httpChan chan *types.HttpInfo) {
 	// var traceIdStateMap = make(map[string]types.State)
-	obj, _ := constants.IPServiceContainerMap.Get(IP)
+	obj, _ := commons.IPServiceContainerMap.Get(IP)
 	var container = obj.(*types.Container)
 	logger.Info(IP, "[Monitoring Container] Group(%s) IP(%s) ID(%s)\n", container.Group, container.IP, container.ID[:10])
 	var TraceMap = make(map[string]chan *types.HttpInfo) // TraceId为key，每个TraceId开启一个go routine
@@ -88,7 +88,7 @@ func CheckingStateByTraceId(traceId string, url string, container *types.Contain
 					HttpType: httpInfo_end.Type,
 				}
 				if container.IP == httpInfo_end.SrcIP && httpInfo.Type == "REQUEST" {
-					obj, _ := constants.IPAllMSMap.Get(httpInfo_end.DstIP)
+					obj, _ := commons.IPAllMSMap.Get(httpInfo_end.DstIP)
 					msType := obj.(string)
 					colon := strings.Index(msType, ":")
 					group := msType[colon+1:]
@@ -248,13 +248,13 @@ func CheckHealthByLocalActuator(container *types.Container) bool {
 
 func MarkContainerUnHealthy(container *types.Container) {
 	var IP = container.IP
-	constants.IPChanMapMutex.Lock()
+	commons.IPChanMapMutex.Lock()
 	container.Health = false
 	logger.Error(container.IP, "[Mark Container Unhealthy] [Group(%s) IP(%s) ID(%s)]\n", container.Group, container.IP, container.ID)
-	ch := constants.IPChanMap[IP]
+	ch := commons.IPChanMap[IP]
 	close(ch)
-	delete(constants.IPChanMap, IP)
-	constants.IPChanMapMutex.Unlock()
+	delete(commons.IPChanMap, IP)
+	commons.IPChanMapMutex.Unlock()
 	go GatewayReplaceInstance(container)
 }
 

@@ -3,7 +3,7 @@ package perf
 import (
 	"net/http"
 
-	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/commons"
 	"gitee.com/zengtao321/frdocker/types"
 	"gitee.com/zengtao321/frdocker/utils"
 	"gitee.com/zengtao321/frdocker/web/entity/R"
@@ -15,11 +15,11 @@ import (
 
 func GetContainerPerformance(c *gin.Context) {
 	IP := c.Query("ip")
-	if IP == "" || !constants.IPServiceContainerMap.Has(IP) {
+	if IP == "" || !commons.IPServiceContainerMap.Has(IP) {
 		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "No such IP!", nil))
 		return
 	}
-	obj, _ := constants.IPServiceContainerMap.Get(IP)
+	obj, _ := commons.IPServiceContainerMap.Get(IP)
 	container := obj.(*types.Container)
 	statsEntry, err := utils.GetContainerStats(container.ID[:10])
 	if err != nil {

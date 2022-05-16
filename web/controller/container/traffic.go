@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"sort"
 
-	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/commons"
 	"gitee.com/zengtao321/frdocker/db"
 	"gitee.com/zengtao321/frdocker/models"
 	"gitee.com/zengtao321/frdocker/web/entity/R"
@@ -20,7 +20,7 @@ func GetContainerTraffic(c *gin.Context) {
 	var traffics []*models.Traffic
 	if IP == "" {
 		var filter = bson.D{
-			{Key: "network", Value: constants.Network},
+			{Key: "network", Value: commons.Network},
 			{Key: "entry", Value: true},
 		}
 		var containerTraffics []*models.ContainerTraffic
@@ -54,12 +54,12 @@ func GetContainerTraffic(c *gin.Context) {
 		c.JSON(http.StatusOK, R.OK(traffics))
 		return
 	}
-	if !constants.IPServiceContainerMap.Has(IP) {
+	if !commons.IPServiceContainerMap.Has(IP) {
 		c.JSON(http.StatusBadRequest, R.Error(http.StatusBadRequest, "", nil))
 		return
 	}
 	var filter = bson.D{
-		{Key: "network", Value: constants.Network},
+		{Key: "network", Value: commons.Network},
 		{Key: "ip", Value: IP},
 	}
 	var containerTraffic models.ContainerTraffic

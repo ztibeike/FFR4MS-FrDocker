@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/commons"
 	"gitee.com/zengtao321/frdocker/types"
 	"gitee.com/zengtao321/frdocker/utils"
 
@@ -19,8 +19,8 @@ import (
 func RunFrecovery(ifaceName string, confPath string) {
 	logger.Info(nil, "Fr-Docker Started!\n")
 	defer logger.Info(nil, "Fr-Docker Stopped!\n")
-	constants.Network = ifaceName
-	constants.RegistryURL = confPath
+	commons.Network = ifaceName
+	commons.RegistryURL = confPath
 	var err error
 	InitContainers(ifaceName, confPath)
 	var wg sync.WaitGroup
@@ -60,17 +60,17 @@ func RunFrecovery(ifaceName string, confPath string) {
 
 		var httpInfo *types.HttpInfo
 		// 判断入口微服务组
-		if !constants.IPAllMSMap.Has(srcIP) && constants.IPAllMSMap.Has(dstIP) && !constants.IPServiceContainerMap.Has(dstIP) {
+		if !commons.IPAllMSMap.Has(srcIP) && commons.IPAllMSMap.Has(dstIP) && !commons.IPServiceContainerMap.Has(dstIP) {
 			httpInfo, err = utils.GetHttpInfo(packet, tcp)
 			if err != nil {
 				continue
 			}
 			if httpInfo.Type == "REQUEST" {
 				go func() {
-					obj, _ := constants.IPAllMSMap.Get(dstIP)
+					obj, _ := commons.IPAllMSMap.Get(dstIP)
 					msType := obj.(string)
 					colon := strings.Index(msType, ":")
-					obj, _ = constants.ServiceGroupMap.Get(msType[colon+1:])
+					obj, _ = commons.ServiceGroupMap.Get(msType[colon+1:])
 					serviceGroup := obj.(*types.ServiceGroup)
 					gateway := serviceGroup.Gateway
 					colon = strings.Index(gateway, ":")
@@ -82,7 +82,7 @@ func RunFrecovery(ifaceName string, confPath string) {
 					}
 					serviceGroup.Entry = true
 					for _, IP := range serviceGroup.Services {
-						obj, _ := constants.IPServiceContainerMap.Get(IP)
+						obj, _ := commons.IPServiceContainerMap.Get(IP)
 						container := obj.(*types.Container)
 						container.Entry = true
 					}
@@ -90,7 +90,7 @@ func RunFrecovery(ifaceName string, confPath string) {
 			}
 		}
 
-		if !(constants.IPAllMSMap.Has(srcIP) && constants.IPAllMSMap.Has(dstIP)) {
+		if !(commons.IPAllMSMap.Has(srcIP) && commons.IPAllMSMap.Has(dstIP)) {
 			continue
 		}
 
@@ -103,7 +103,7 @@ func RunFrecovery(ifaceName string, confPath string) {
 		}
 
 		var currentIP string // 当前http应该检测的服务IP
-		if constants.IPServiceContainerMap.Has(srcIP) {
+		if commons.IPServiceContainerMap.Has(srcIP) {
 			currentIP = srcIP
 		} else {
 			currentIP = dstIP
@@ -111,30 +111,30 @@ func RunFrecovery(ifaceName string, confPath string) {
 		if httpInfo.DstIP == currentIP && httpInfo.Type == "REQUEST" {
 			trafficChan <- currentIP
 		}
-		obj, _ := constants.IPServiceContainerMap.Get(currentIP)
+		obj, _ := commons.IPServiceContainerMap.Get(currentIP)
 		var currentContainer = obj.(*types.Container)
-		constants.IPChanMapMutex.Lock()
+		commons.IPChanMapMutex.Lock()
 		if !currentContainer.Health {
-			constants.IPChanMapMutex.Unlock()
+			commons.IPChanMapMutex.Unlock()
 			continue
 		}
 		var httpChan chan *types.HttpInfo
 		var ok bool
-		if httpChan, ok = constants.IPChanMap[currentIP]; ok {
+		if httpChan, ok = commons.IPChanMap[currentIP]; ok {
 			httpChan <- httpInfo
 		} else {
 			httpChan = make(chan *types.HttpInfo)
 			go StateMonitor(currentIP, httpChan)
 			httpChan <- httpInfo
-			constants.IPChanMap[currentIP] = httpChan
+			commons.IPChanMap[currentIP] = httpChan
 		}
-		constants.IPChanMapMutex.Unlock()
+		commons.IPChanMapMutex.Unlock()
 	}
 	logger.Info(nil, "Closing All Channels......\n")
 	cancel()
-	for IP, ch := range constants.IPChanMap {
+	for IP, ch := range commons.IPChanMap {
 		close(ch)
-		delete(constants.IPChanMap, IP)
+		delete(commons.IPChanMap, IP)
 	}
 	close(trafficChan)
 }

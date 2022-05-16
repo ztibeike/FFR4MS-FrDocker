@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/commons"
 	"gitee.com/zengtao321/frdocker/models"
 	"gitee.com/zengtao321/frdocker/types"
 	"gitee.com/zengtao321/frdocker/utils"
@@ -37,20 +37,20 @@ func InitFromDataBase(ifaceName string) {
 	cursor.All(context.TODO(), &dbContainers)
 	for _, dbContainer := range dbContainers {
 		container := dbContainer.Container
-		constants.IPServiceContainerMap.Set(container.IP, container)
-		constants.IPAllMSMap.Set(container.IP, "SERVICE:"+container.Group)
+		commons.IPServiceContainerMap.Set(container.IP, container)
+		commons.IPAllMSMap.Set(container.IP, "SERVICE:"+container.Group)
 		colon := strings.Index(container.Gateway, ":")
-		constants.IPAllMSMap.Set(container.Gateway[:colon], "GATEWAY:"+container.Group)
-		if !constants.ServiceGroupMap.Has(container.Group) {
+		commons.IPAllMSMap.Set(container.Gateway[:colon], "GATEWAY:"+container.Group)
+		if !commons.ServiceGroupMap.Has(container.Group) {
 			serviceGroup := &types.ServiceGroup{
 				Gateway:  container.Gateway,
 				Services: []string{container.IP},
 				Leaf:     container.Leaf,
 				Entry:    container.Entry,
 			}
-			constants.ServiceGroupMap.Set(container.Group, serviceGroup)
+			commons.ServiceGroupMap.Set(container.Group, serviceGroup)
 		} else {
-			obj, _ := constants.ServiceGroupMap.Get(container.Group)
+			obj, _ := commons.ServiceGroupMap.Get(container.Group)
 			serviceGroup := obj.(*types.ServiceGroup)
 			serviceGroup.Services = append(serviceGroup.Services, container.IP)
 		}

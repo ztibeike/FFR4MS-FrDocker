@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/commons"
 	"gitee.com/zengtao321/frdocker/types"
 	"gitee.com/zengtao321/frdocker/utils/logger"
 
@@ -113,7 +113,7 @@ func GetHttpInfo(packet gopacket.Packet, tcpLayer *layers.TCP) (*types.HttpInfo,
 	httpInfo.Type = httpType
 	httpInfo.TraceId = GetTraceId(payload)
 	httpInfo.URL = GetURL(payload)
-	httpInfo.Internal = constants.IPAllMSMap.Has(srcIP)
+	httpInfo.Internal = commons.IPAllMSMap.Has(srcIP)
 	httpInfo.Timestamp = packet.Metadata().Timestamp
 	return httpInfo, nil
 }

@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"gitee.com/zengtao321/frdocker/constants"
+	"gitee.com/zengtao321/frdocker/commons"
 	"gitee.com/zengtao321/frdocker/settings"
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
@@ -188,7 +188,7 @@ func LogToFile() {
 	for logInfo := range logChan {
 		fp, ok := IPFileMap[logInfo.IP]
 		if !ok {
-			fileName := fmt.Sprintf("%s/%s-%s.log", settings.LOG_FILE_DIR, constants.Network, logInfo.IP)
+			fileName := fmt.Sprintf("%s/%s-%s.log", settings.LOG_FILE_DIR, commons.Network, logInfo.IP)
 			fp, _ = os.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, 6)
 			IPFileMap[logInfo.IP] = fp
 		}
