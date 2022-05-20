@@ -13,6 +13,17 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// RegisterController 用户注册
+// @Summary 用户注册
+// @Description 用户注册
+// @Tags 用户操作
+// @Accept application/json
+// @Produce application/json
+// @Param user			body	entity.UserEntity	true	"注册用户信息"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity "返回成功信息"
+// @Failure 400 {object} R.ResponseEntity "返回失败信息"
+// @Router /user/register [post]
 func RegisterController(c *gin.Context) {
 	userMgo := db.GetUserMgo()
 	var user entity.UserEntity

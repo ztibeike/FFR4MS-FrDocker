@@ -13,6 +13,17 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// LoginController 用户登录
+// @Summary 用户登录
+// @Description 用户登录
+// @Tags 用户操作
+// @Accept application/json
+// @Produce application/json
+// @Param user	body	entity.UserEntity	true	"登录用户信息"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity{data=gin.H} "返回登录Token"
+// @Failure 400 {object} R.ResponseEntity "返回失败信息"
+// @Router /user/login [post]
 func LoginController(c *gin.Context) {
 	userMgo := db.GetUserMgo()
 	var actualUser, expectUser entity.UserEntity
@@ -39,6 +50,15 @@ func LoginController(c *gin.Context) {
 	c.JSON(http.StatusOK, R.OK(gin.H{"token": token}))
 }
 
+// LogoutController 退出登录
+// @Summary 退出登录
+// @Description 退出登录
+// @Tags 用户操作
+// @Produce application/json
+// @Param Authorization	header	string	true	"token"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity{data=gin.H} "返回登录Token"
+// @Router /user/logout [post]
 func LogoutController(c *gin.Context) {
 	c.JSON(http.StatusOK, R.OK(nil))
 }

@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"gitee.com/zengtao321/frdocker/commons"
+	"gitee.com/zengtao321/frdocker/db/drivers"
 	"gitee.com/zengtao321/frdocker/models"
 	"gitee.com/zengtao321/frdocker/types"
 	"gitee.com/zengtao321/frdocker/utils/logger"
@@ -23,6 +24,7 @@ func SetupCloseHandler(ifaceName string, wg *sync.WaitGroup) {
 	ClosePcapHandler(ifaceName)
 	SaveContainerInfo(ifaceName)
 	logger.Close()
+	drivers.Close()
 }
 
 func ClosePcapHandler(ifaceName string) {

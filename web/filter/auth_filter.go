@@ -11,10 +11,24 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func checkNoAuth(url string) bool {
+	var exceptURLs = []string{
+		"/user/login",
+		"/user/logout",
+		"/swagger",
+	}
+	for _, _url := range exceptURLs {
+		if strings.HasPrefix(url, _url) {
+			return true
+		}
+	}
+	return false
+}
+
 func UserAuthFilter() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uri := c.Request.URL.String()
-		if uri == "/user/login" || uri == "/user/logout" {
+		if checkNoAuth(uri) {
 			c.Next()
 			return
 		}

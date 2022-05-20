@@ -17,6 +17,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// AddContainerController 添加微服务实例
+// @Summary 添加微服务实例
+// @Description 添加微服务实例
+// @Tags 微服务实例操作
+// @Accept application/json
+// @Produce application/json
+// @Param Authorization		header	string					true	"token"
+// @Param addContainerDTO	body	dto.AddContainerDTO		true	"微服务实例信息"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity{data=types.Container} "返回新增的微服务实例信息"
+// @Failure 400 {object} R.ResponseEntity "返回失败信息"
+// @Router /command/add [post]
 func AddContainerController(c *gin.Context) {
 	var addContainerDTO dto.AddContainerDTO
 	if err := c.ShouldBindJSON(&addContainerDTO); err != nil {
@@ -55,6 +67,18 @@ func AddContainerController(c *gin.Context) {
 	c.JSON(http.StatusOK, R.OK(container))
 }
 
+// DeleteContainerController 下线微服务实例
+// @Summary 下线微服务实例
+// @Description 下线微服务实例
+// @Tags 微服务实例操作
+// @Accept application/json
+// @Produce application/json
+// @Param Authorization		header	string			true	"token"
+// @Param deleteContainer	body	types.Container	true	"下线微服务实例信息"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity "返回成功信息"
+// @Failure 400 {object} R.ResponseEntity "返回失败信息"
+// @Router /command/delete [post]
 func DeleteContainerController(c *gin.Context) {
 	var deleteContainer types.Container
 	if err := c.ShouldBindJSON(&deleteContainer); err != nil {
@@ -74,6 +98,18 @@ func DeleteContainerController(c *gin.Context) {
 	c.JSON(http.StatusOK, R.OK(nil))
 }
 
+// DeleteBatchContainerController 批量下线微服务实例
+// @Summary 批量下线微服务实例
+// @Description 批量下线微服务实例
+// @Tags 微服务实例操作
+// @Accept application/json
+// @Produce application/json
+// @Param Authorization		header	string				true	"token"
+// @Param deleteContainers	body	[]types.Container	true	"下线微服务实例信息列表"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity{data=int} "返回成功下线的微服务实例数量"
+// @Failure 400 {object} R.ResponseEntity 			"返回失败信息"
+// @Router /command/delete/batch [post]
 func DeleteBatchContainerController(c *gin.Context) {
 	var deleteContainers []types.Container
 	if err := c.ShouldBindJSON(&deleteContainers); err != nil {
@@ -151,6 +187,18 @@ func DataBaseDelete(IP string) {
 	containerMgo.Delete(filter)
 }
 
+// UpContainerController 上线微服务实例
+// @Summary 上线微服务实例
+// @Description 上线微服务实例
+// @Tags 微服务实例操作
+// @Accept application/json
+// @Produce application/json
+// @Param Authorization	header	string			true	"token"
+// @Param upContainer	body	types.Container	true	"上线的微服务实例信息"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity "返回成功信息"
+// @Failure 400 {object} R.ResponseEntity "返回失败信息"
+// @Router /command/up [post]
 func UpContainerController(c *gin.Context) {
 	var upContainer types.Container
 	if err := c.ShouldBindJSON(&upContainer); err != nil {

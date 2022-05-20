@@ -13,6 +13,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetContainerPerformance 获取微服务容器性能参数
+// @Summary 获取微服务容器性能参数
+// @Description 获取微服务容器性能参数
+// @Tags 系统性能操作
+// @Produce application/json
+// @Param Authorization	header	string	true	"token"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity{data=dto.SystemPerfDTO} "返回微服务容器性能参数"
+// @Failure 400 {object} R.ResponseEntity "返回失败信息"
+// @Router /perf/container [get]
 func GetContainerPerformance(c *gin.Context) {
 	IP := c.Query("ip")
 	if IP == "" || !commons.IPServiceContainerMap.Has(IP) {

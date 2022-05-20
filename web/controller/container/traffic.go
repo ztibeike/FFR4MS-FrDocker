@@ -14,6 +14,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// GetContainerTraffic 获取微服务容器访问流量
+// @Summary 获取微服务容器访问流量
+// @Description 获取微服务容器访问流量
+// @Tags 微服务容器操作
+// @Produce application/json
+// @Param Authorization	header	string	true	"token"
+// @Param ip			query	string	true	"容器的IP地址"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity{data=[]models.Traffic} "返回微服务容器访问流量"
+// @Failure 400 {object} R.ResponseEntity "返回失败信息"
+// @Router /container/traffic [get]
 func GetContainerTraffic(c *gin.Context) {
 	IP := c.Query("ip")
 	trafficMgo := db.GetTrafficMgo()

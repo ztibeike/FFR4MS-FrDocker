@@ -8,6 +8,7 @@ import (
 	"gitee.com/zengtao321/frdocker/web/controller/perf"
 	"gitee.com/zengtao321/frdocker/web/controller/user"
 	"gitee.com/zengtao321/frdocker/web/filter"
+	"gitee.com/zengtao321/frdocker/web/swagger"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,5 +23,6 @@ func SetupRouter() *gin.Engine {
 	container.RegisterRouter(r)
 	perf.RegisterRouter(r)
 	admin.RegisterRouter(r)
+	swagger.RegisterRouter(r)
 	return r
 }

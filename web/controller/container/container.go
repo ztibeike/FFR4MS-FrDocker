@@ -10,6 +10,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetContainer 根据IP获取微服务容器信息
+// @Summary 根据IP获取微服务容器信息
+// @Description 根据IP获取微服务容器信息
+// @Tags 微服务容器操作
+// @Produce application/json
+// @Param Authorization	header	string	true	"token"
+// @Param ip			query	string	false	"容器的IP地址"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity{data=[]types.Container} "返回对应IP地址的容器/所有容器"
+// @Failure 400 {object} R.ResponseEntity "返回失败信息"
+// @Router /container [get]
 func GetContainer(c *gin.Context) {
 	IP := c.Query("ip")
 	var containers []*types.Container
@@ -44,6 +55,16 @@ func GetContainer(c *gin.Context) {
 	c.JSON(http.StatusOK, R.OK(containers))
 }
 
+// GetContainerCallChain 获取微服务系统的服务调用链
+// @Summary 获取微服务系统的服务调用链
+// @Description 获取微服务系统的服务调用链
+// @Tags 微服务容器操作
+// @Produce application/json
+// @Param Authorization	header	string	true	"token"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity{data=map[string][]string} "返回微服务系统的服务调用链"
+// @Failure 400 {object} R.ResponseEntity "返回失败信息"
+// @Router /container/calls [get]
 func GetContainerCallChain(c *gin.Context) {
 	serviceGroupMap := commons.ServiceGroupMap.Items()
 	var callChainMap = make(map[string][]string)

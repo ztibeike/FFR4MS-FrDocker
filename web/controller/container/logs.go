@@ -17,6 +17,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetContainerLogs 获取微服务容器运行日志
+// @Summary 获取微服务容器运行日志
+// @Description 获取微服务容器运行日志
+// @Tags 微服务容器操作
+// @Produce application/json
+// @Param Authorization	header	string	true	"token"
+// @Param ip			query	string	true	"容器的IP地址"
+// @Param tail			query	int		false	"日志行数，默认100"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity{data=string} "返回微服务容器运行日志"
+// @Failure 400 {object} R.ResponseEntity "返回失败信息"
+// @Router /container/logs [get]
 func GetContainerLogs(c *gin.Context) {
 	IP := c.Query("ip")
 	if IP == "" || !commons.IPServiceContainerMap.Has(IP) {
@@ -43,6 +55,18 @@ type MonitorLog struct {
 	Msg   string `json:"msg"`
 }
 
+// GetMonitorLogs 获取微服务容器监控日志
+// @Summary 获取微服务容器监控日志
+// @Description 获取微服务容器监控日志
+// @Tags 微服务容器操作
+// @Produce application/json
+// @Param Authorization	header	string	true	"token"
+// @Param ip			query	string	true	"容器的IP地址"
+// @Param tail			query	int		false	"日志行数，默认100"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity{data=string} "返回微服务容器监控日志"
+// @Failure 400 {object} R.ResponseEntity "返回失败信息"
+// @Router /container/monitorLogs [get]
 func GetMonitorLogs(c *gin.Context) {
 	IP := c.Query("ip")
 	if IP == "" || !commons.IPServiceContainerMap.Has(IP) {

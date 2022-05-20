@@ -21,6 +21,17 @@ import (
 	"github.com/shirou/gopsutil/mem"
 )
 
+// GetSystemPerformance 获取服务器性能参数
+// @Summary 获取服务器性能参数
+// @Description 获取服务器性能参数
+// @Tags 系统性能操作
+// @Produce application/json
+// @Param Authorization	header	string	true	"token"
+// @Param ip			query	string	true	"容器的IP地址"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity{data=dto.SystemPerfDTO} "返回服务器性能参数"
+// @Failure 400 {object} R.ResponseEntity "返回失败信息"
+// @Router /perf/system [get]
 func GetSystemPerformance(c *gin.Context) {
 	var wg sync.WaitGroup
 	wg.Add(5)

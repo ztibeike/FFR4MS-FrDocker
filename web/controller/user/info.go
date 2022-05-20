@@ -13,6 +13,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetUserInfo 获取用户信息
+// @Summary 获取用户信息
+// @Description 获取用户信息
+// @Tags 用户操作
+// @Produce application/json
+// @Param Authorization	header	string	true	"token"
+// @Security ApiKeyAuth
+// @Success 200 {object} R.ResponseEntity{data=dto.UserInfoDTO} "返回用户信息"
+// @Failure 400 {object} R.ResponseEntity "返回失败信息"
+// @Router /user/info [get]
 func GetUserInfo(c *gin.Context) {
 	tokenStr := c.Request.Header["Authorization"]
 	claims, _ := token.ParseToken(tokenStr[0])
