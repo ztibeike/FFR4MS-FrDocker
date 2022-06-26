@@ -588,84 +588,6 @@ paths:
       summary: 获取微服务系统的服务调用链
       tags:
       - 微服务容器操作
-  /container/logs:
-    get:
-      description: 获取微服务容器运行日志
-      parameters:
-      - description: token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: 容器的IP地址
-        in: query
-        name: ip
-        required: true
-        type: string
-      - description: 日志行数，默认100
-        in: query
-        name: tail
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 返回微服务容器运行日志
-          schema:
-            allOf:
-            - $ref: '#/definitions/R.ResponseEntity'
-            - properties:
-                data:
-                  type: string
-              type: object
-        "400":
-          description: 返回失败信息
-          schema:
-            $ref: '#/definitions/R.ResponseEntity'
-      security:
-      - ApiKeyAuth: []
-      summary: 获取微服务容器运行日志
-      tags:
-      - 微服务容器操作
-  /container/monitorLogs:
-    get:
-      description: 获取微服务容器监控日志
-      parameters:
-      - description: token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: 容器的IP地址
-        in: query
-        name: ip
-        required: true
-        type: string
-      - description: 日志行数，默认100
-        in: query
-        name: tail
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 返回微服务容器监控日志
-          schema:
-            allOf:
-            - $ref: '#/definitions/R.ResponseEntity'
-            - properties:
-                data:
-                  type: string
-              type: object
-        "400":
-          description: 返回失败信息
-          schema:
-            $ref: '#/definitions/R.ResponseEntity'
-      security:
-      - ApiKeyAuth: []
-      summary: 获取微服务容器监控日志
-      tags:
-      - 微服务容器操作
   /container/traffic:
     get:
       description: 获取微服务容器访问流量
@@ -703,6 +625,118 @@ paths:
       summary: 获取微服务容器访问流量
       tags:
       - 微服务容器操作
+  /logs/container:
+    get:
+      description: 获取微服务容器运行日志
+      parameters:
+      - description: token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 容器的IP地址
+        in: query
+        name: ip
+        required: true
+        type: string
+      - description: 日志行数，默认100
+        in: query
+        name: tail
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回微服务容器运行日志
+          schema:
+            allOf:
+            - $ref: '#/definitions/R.ResponseEntity'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: 返回失败信息
+          schema:
+            $ref: '#/definitions/R.ResponseEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取微服务容器运行日志
+      tags:
+      - 日志操作
+  /logs/errors:
+    get:
+      description: 获取异常日志
+      parameters:
+      - description: token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 是否已读
+        in: query
+        name: viewed
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回异常日志
+          schema:
+            allOf:
+            - $ref: '#/definitions/R.ResponseEntity'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: 返回失败信息
+          schema:
+            $ref: '#/definitions/R.ResponseEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取异常日志
+      tags:
+      - 日志操作
+  /logs/monitor:
+    get:
+      description: 获取微服务容器监控日志
+      parameters:
+      - description: token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 容器的IP地址
+        in: query
+        name: ip
+        required: true
+        type: string
+      - description: 日志行数，默认100
+        in: query
+        name: tail
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回微服务容器监控日志
+          schema:
+            allOf:
+            - $ref: '#/definitions/R.ResponseEntity'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: 返回失败信息
+          schema:
+            $ref: '#/definitions/R.ResponseEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取微服务容器监控日志
+      tags:
+      - 日志操作
   /perf/container:
     get:
       description: 获取微服务容器性能参数

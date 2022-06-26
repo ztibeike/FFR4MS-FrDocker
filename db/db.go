@@ -137,3 +137,14 @@ func (m *Mgo) ReplaceOne(filter, replace interface{}) (updateResult *mongo.Updat
 	}
 	return updateResult
 }
+
+func (m *Mgo) CreateIndex(key string) string {
+	model := mongo.IndexModel{
+		Keys: bson.D{{Key: key, Value: 1}},
+	}
+	index, err := m.collection.Indexes().CreateOne(context.TODO(), model)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return index
+}

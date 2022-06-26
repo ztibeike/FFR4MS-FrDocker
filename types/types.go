@@ -84,3 +84,15 @@ type ServiceGroup struct {
 	Leaf     bool
 	Entry    bool
 }
+
+type ErrorLog struct {
+	Id      string `bson:"id" json:"id"`
+	Network string `bson:"network" json:"network"`
+	IP      string `bson:"ip" json:"ip"`
+	Time    string `bson:"time" json:"time"`
+	Name    string `bson:"name" json:"name"`
+	Group   string `bson:"group" json:"group"`
+	Level   string `bson:"level" json:"level"`
+	Logs    string `bson:"logs" json:"logs"`
+	Viewed  bool   `bson:"viewed" json:"viewed"`
+}

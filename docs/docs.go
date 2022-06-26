@@ -603,7 +603,69 @@ const docTemplate = `{
                 }
             }
         },
-        "/container/logs": {
+        "/container/traffic": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取微服务容器访问流量",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "微服务容器操作"
+                ],
+                "summary": "获取微服务容器访问流量",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "容器的IP地址",
+                        "name": "ip",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "返回微服务容器访问流量",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/R.ResponseEntity"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.Traffic"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "返回失败信息",
+                        "schema": {
+                            "$ref": "#/definitions/R.ResponseEntity"
+                        }
+                    }
+                }
+            }
+        },
+        "/logs/container": {
             "get": {
                 "security": [
                     {
@@ -615,7 +677,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "微服务容器操作"
+                    "日志操作"
                 ],
                 "summary": "获取微服务容器运行日志",
                 "parameters": [
@@ -668,7 +730,65 @@ const docTemplate = `{
                 }
             }
         },
-        "/container/monitorLogs": {
+        "/logs/errors": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取异常日志",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "日志操作"
+                ],
+                "summary": "获取异常日志",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否已读",
+                        "name": "viewed",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "返回异常日志",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/R.ResponseEntity"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "返回失败信息",
+                        "schema": {
+                            "$ref": "#/definitions/R.ResponseEntity"
+                        }
+                    }
+                }
+            }
+        },
+        "/logs/monitor": {
             "get": {
                 "security": [
                     {
@@ -680,7 +800,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "微服务容器操作"
+                    "日志操作"
                 ],
                 "summary": "获取微服务容器监控日志",
                 "parameters": [
@@ -718,68 +838,6 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "type": "string"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "返回失败信息",
-                        "schema": {
-                            "$ref": "#/definitions/R.ResponseEntity"
-                        }
-                    }
-                }
-            }
-        },
-        "/container/traffic": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "获取微服务容器访问流量",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "微服务容器操作"
-                ],
-                "summary": "获取微服务容器访问流量",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "容器的IP地址",
-                        "name": "ip",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "返回微服务容器访问流量",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/R.ResponseEntity"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/models.Traffic"
-                                            }
                                         }
                                     }
                                 }

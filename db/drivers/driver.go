@@ -56,5 +56,5 @@ func Close() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connection to MongoDB closed.")
+	//logger.Info(nil, "Connection to MongoDB Closed\n")
 }

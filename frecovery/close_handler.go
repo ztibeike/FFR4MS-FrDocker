@@ -29,7 +29,7 @@ func SetupCloseHandler(ifaceName string, wg *sync.WaitGroup) {
 
 func ClosePcapHandler(ifaceName string) {
 	pcapHandler.Close()
-	logger.Info(nil, "Stop capturing packets on interface: %s\n", ifaceName)
+	logger.Info(nil, "Stop Capturing Packets on Interface: %s\n", ifaceName)
 }
 
 func SaveContainerInfo(ifaceName string) {

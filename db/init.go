@@ -5,6 +5,7 @@ var (
 	ContainerMgo *Mgo
 	UserMongo    *Mgo
 	TrafficMgo   *Mgo
+	ErrorLogMgo  *Mgo
 )
 
 func init() {
@@ -40,4 +41,13 @@ func GetTrafficMgo() *Mgo {
 		TrafficMgo = NewMgo("traffic")
 	}
 	return TrafficMgo
+}
+
+func GetErrorLogMgo() *Mgo {
+	if ErrorLogMgo == nil {
+		ErrorLogMgo = NewMgo("errorlog")
+		ErrorLogMgo.CreateIndex("network")
+		ErrorLogMgo.CreateIndex("id")
+	}
+	return ErrorLogMgo
 }

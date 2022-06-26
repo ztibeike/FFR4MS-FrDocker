@@ -5,6 +5,7 @@ import (
 	"gitee.com/zengtao321/frdocker/web/controller/admin"
 	"gitee.com/zengtao321/frdocker/web/controller/command"
 	"gitee.com/zengtao321/frdocker/web/controller/container"
+	"gitee.com/zengtao321/frdocker/web/controller/logs"
 	"gitee.com/zengtao321/frdocker/web/controller/perf"
 	"gitee.com/zengtao321/frdocker/web/controller/user"
 	"gitee.com/zengtao321/frdocker/web/filter"
@@ -24,5 +25,6 @@ func SetupRouter() *gin.Engine {
 	perf.RegisterRouter(r)
 	admin.RegisterRouter(r)
 	swagger.RegisterRouter(r)
+	logs.RegisterRouter(r)
 	return r
 }

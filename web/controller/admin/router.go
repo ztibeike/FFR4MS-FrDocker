@@ -10,4 +10,5 @@ func RegisterRouter(r *gin.Engine) {
 	r.GET("/admin/user/list", filter.AdminAuthFilter(), GetUserList)
 	r.POST("/admin/user/delete", filter.AdminAuthFilter(), DeleteUser)
 	r.POST("/admin/user/update", filter.AdminAuthFilter(), UpdateUser)
+	// TODO 测试
 }
