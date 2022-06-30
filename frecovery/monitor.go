@@ -26,6 +26,10 @@ func StateMonitor(IP string, httpChan chan *types.HttpInfo) {
 		var channel chan *types.HttpInfo
 		var ok bool
 		var traceId = httpInfo.TraceId
+		url := httpInfo.URL // 每个微服务第一个状态是开始于接收到请求，httpInfo中有URL
+		if httpInfo.Type == "REQUEST" && url == "" {
+			continue
+		}
 		if channel, ok = TraceMap[traceId]; ok {
 			channel <- httpInfo
 			if IP == httpInfo.SrcIP && httpInfo.Type == "RESPONSE" {
@@ -34,7 +38,6 @@ func StateMonitor(IP string, httpChan chan *types.HttpInfo) {
 			}
 		} else {
 			channel = make(chan *types.HttpInfo)
-			url := httpInfo.URL // 每个微服务第一个状态是开始于接收到请求，httpInfo中有URL
 			if container.States == nil {
 				container.States = make(map[string][]*types.State)
 			} else if _, ok := container.States[url]; !ok {
@@ -129,7 +132,7 @@ func TEDA(state *types.State, data *types.Vector) (float64, float64) {
 		state.Variance.Data = make([]float64, len(data.Data))
 		copy(state.Variance.Data, data.Data)
 		state.Sigma = 0.0
-		state.Ecc = math.NaN()
+		state.Ecc = 0.0
 		state.K = state.K + 1
 		threshold = (math.Pow(settings.NSIGMA, 2) + 1) / float64((2 * state.K))
 		state.Threshold = threshold
@@ -201,6 +204,10 @@ func CheckTimeExceedNotEnd(container *types.Container, traceId string, url strin
 					logger.Warn(container.IP, "[Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
 						traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(state.MaxTime), health)
 					if !health {
+						data := &types.Vector{
+							Data: []float64{t},
+						}
+						TEDA(state, data)
 						MarkContainerUnHealthy(container)
 					}
 				}
@@ -212,6 +219,10 @@ func CheckTimeExceedNotEnd(container *types.Container, traceId string, url strin
 				logger.Warn(container.IP, "[Time Exceed] [TraceId(%s)] [Group(%s) IP(%s) ID(%s)] [State(%d) MaxTime(%d)] [Health(%t)]\n",
 					traceId, container.Group, container.IP, container.ID[:10], currentIdx, int(state.MaxTime), health)
 				if !health {
+					data := &types.Vector{
+						Data: []float64{maxTime * settings.MAX_WAIT_TIME_FACTOR},
+					}
+					TEDA(state, data)
 					MarkContainerUnHealthy(container)
 				}
 				return
@@ -277,6 +288,9 @@ func GatewayReplaceInstance(container *types.Container) {
 }
 
 func SetStateRecord(state *types.State) {
+	if math.IsNaN(state.Ecc) {
+		return
+	}
 	recordLen := len(state.Record)
 	if recordLen >= settings.STATE_RECORD_LEN {
 		start := recordLen - settings.STATE_RECORD_LEN + 1

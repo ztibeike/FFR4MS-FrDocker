@@ -111,8 +111,7 @@ func (m *Mgo) DeleteMany(key string, value interface{}) int64 {
 }
 
 // 更新一个
-func (m *Mgo) UpdateOne(key string, value interface{}, update interface{}) (updateResult *mongo.UpdateResult) {
-	filter := bson.D{{Key: key, Value: value}}
+func (m *Mgo) UpdateOne(filter interface{}, update interface{}) (updateResult *mongo.UpdateResult) {
 	updateResult, err := m.collection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		log.Fatal(err)

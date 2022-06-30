@@ -6,4 +6,6 @@ func RegisterRouter(r *gin.Engine) {
 	r.GET("/logs/container", GetContainerLogs)
 	r.GET("/logs/monitor", GetMonitorLogs)
 	r.GET("/logs/error", GetErrorLogs)
+	r.POST("/logs/error/update", SetErrorLogsViewed)
+	r.POST("/logs/error/delete", DeleteErrorLogs)
 }

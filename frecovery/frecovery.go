@@ -59,13 +59,14 @@ func RunFrecovery(ifaceName string, confPath string) {
 		}
 
 		var httpInfo *types.HttpInfo
-		// 判断入口微服务组
+		// 判断入口微服务组: src非网关和服务 && dst是网关
 		if !commons.IPAllMSMap.Has(srcIP) && commons.IPAllMSMap.Has(dstIP) && !commons.IPServiceContainerMap.Has(dstIP) {
 			httpInfo, err = utils.GetHttpInfo(packet, tcp)
 			if err != nil {
 				continue
 			}
-			if httpInfo.Type == "REQUEST" {
+			// 外界来的请求，类型是REQUEST，且没有TraceId
+			if httpInfo.Type == "REQUEST" && httpInfo.TraceId == "" {
 				go func() {
 					obj, _ := commons.IPAllMSMap.Get(dstIP)
 					msType := obj.(string)
