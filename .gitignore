@@ -18,6 +18,8 @@
 .vscode
 .idea
 
+__debug_bin
+
 vendor
 
 *.mongodb
