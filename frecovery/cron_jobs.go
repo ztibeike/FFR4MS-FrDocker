@@ -21,7 +21,7 @@ func CronSaveTraffic(ctx context.Context, trafficChan chan string) {
 	if settings.CRON_LEVEL == "HOUR" {
 		spec = "0 59 * * * *"
 	} else if settings.CRON_LEVEL == "MINUTE" {
-		spec = "59 * * * * *"
+		spec = "58 * * * * *"
 	} else {
 		return
 	}
@@ -106,7 +106,7 @@ func CronSaveContainerInfo(ctx context.Context, ifaceName string) {
 	if settings.CRON_LEVEL == "HOUR" {
 		spec = "0 59 * * * *"
 	} else if settings.CRON_LEVEL == "MINUTE" {
-		spec = "59 * * * * *"
+		spec = "58 * * * * *"
 	} else {
 		return
 	}

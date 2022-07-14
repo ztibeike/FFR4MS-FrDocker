@@ -280,7 +280,7 @@ func GatewayReplaceInstance(container *types.Container) {
 	var requestBody, _ = json.Marshal(replaceInfo)
 	response, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil || response == nil || response.StatusCode != 200 {
-		logger.Info(container.IP, "[Gateway Replace Instance] [Gateway(%s) Group(%s) Instance(%s)] Gateway Error!\n",
+		logger.Warn(container.IP, "[Gateway Replace Instance] [Gateway(%s) Group(%s) Instance(%s)] Gateway Error!\n",
 			gateway, container.Group, container.IP)
 	}
 	logger.Info(container.IP, "[Gateway Replace Instance] [Gateway(%s) Group(%s) Instance(%s)] Service Down!\n",

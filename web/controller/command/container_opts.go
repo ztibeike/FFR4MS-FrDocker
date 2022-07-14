@@ -1,6 +1,9 @@
 package command
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -214,5 +217,24 @@ func UpContainerController(c *gin.Context) {
 	container.Health = true
 	container.States = nil
 	logger.Info(container.IP, "[Mark Container Health] [Group(%s) IP(%s) ID(%s)]\n", container.Group, container.IP, container.ID)
+	GatewayUpServiceInstance(container)
 	c.JSON(http.StatusOK, R.OK(nil))
+}
+
+func GatewayUpServiceInstance(container *types.Container) {
+	var gateway = container.Gateway
+	var url = fmt.Sprintf("http://%s/zuulApi/upServiceInstance", gateway)
+	var upServiceInfo = &dto.GateWayUpService{
+		ServiceName:    container.Group,
+		UpInstanceHost: container.IP,
+		UpInstancePort: container.Port,
+	}
+	var requestBody, _ = json.Marshal(upServiceInfo)
+	response, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
+	if err != nil || response == nil || response.StatusCode != 200 {
+		logger.Warn(container.IP, "[Gateway Up Instance] [Gateway(%s) Group(%s) Instance(%s)] Gateway Error!\n",
+			gateway, container.Group, container.IP)
+	}
+	logger.Info(container.IP, "[Gateway Up Instance] [Gateway(%s) Group(%s) Instance(%s)] Service Up!\n",
+		gateway, container.Group, container.IP)
 }
