@@ -259,6 +259,9 @@ func CheckHealthByLocalActuator(container *types.Container) bool {
 
 func MarkContainerUnHealthy(container *types.Container) {
 	var IP = container.IP
+	if !container.Health {
+		return
+	}
 	commons.IPChanMapMutex.Lock()
 	container.Health = false
 	logger.Error(container.IP, "[Mark Container Unhealthy] [Group(%s) IP(%s) ID(%s)]\n", container.Group, container.IP, container.ID)

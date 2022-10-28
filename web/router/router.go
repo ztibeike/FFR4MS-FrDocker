@@ -1,6 +1,8 @@
 package router
 
 import (
+	"io/ioutil"
+
 	"gitee.com/zengtao321/frdocker/settings"
 	"gitee.com/zengtao321/frdocker/web/controller/admin"
 	"gitee.com/zengtao321/frdocker/web/controller/command"
@@ -17,6 +19,7 @@ import (
 
 func SetupRouter() *gin.Engine {
 	gin.SetMode(settings.RUNNING_MODE)
+	gin.DefaultWriter = ioutil.Discard
 	r := gin.Default()
 	r.Use(filter.CorsFilter())
 	r.Use(filter.UserAuthFilter())

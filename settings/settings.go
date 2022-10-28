@@ -4,7 +4,7 @@ package settings
 const WEB_HANDLER_PORT = "11111"
 
 // RUNNING_MODE debug, test, release
-const RUNNING_MODE = "debug"
+const RUNNING_MODE = "release"
 
 // CRON_LEVEL 定时任务时间等级 HOUR, MINUTE
 const CRON_LEVEL = "MINUTE"
