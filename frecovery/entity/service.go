@@ -9,3 +9,13 @@ type Service struct {
 	Calls       []string // 调用的服务
 	Containers  []string // 服务实例容器
 }
+
+func NewService(serviceName string) *Service {
+	return &Service{
+		ServiceName: serviceName,
+		Group:       serviceName,
+		Gateway:     "",
+		IsLeaf:      false,
+		IsRoot:      false,
+	}
+}
