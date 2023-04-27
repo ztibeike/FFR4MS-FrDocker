@@ -4,22 +4,22 @@ import (
 	"context"
 
 	"gitee.com/zengtao321/frdocker/utils"
-	"gitee.com/zengtao321/frdocker/utils/logger"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/sirupsen/logrus"
 )
 
 type DockerCLI struct {
 	cli        *client.Client
-	logger     *logger.Logger
+	logger     *logrus.Logger
 	containers map[string]types.Container
 }
 
-func NewDockerCLI(logger *logger.Logger) *DockerCLI {
+func NewDockerCLI(logger *logrus.Logger) *DockerCLI {
 	dockerCli := &DockerCLI{logger: logger, containers: make(map[string]types.Container)}
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		logger.Fatal("Error while creating Docker Client: ", err)
+		logger.Fatalln("Error while creating Docker Client: ", err)
 	}
 	dockerCli.cli = cli
 	dockerCli.GetAllContainers()
@@ -29,7 +29,7 @@ func NewDockerCLI(logger *logger.Logger) *DockerCLI {
 func (dockerCli *DockerCLI) GetAllContainers() {
 	containers, err := dockerCli.cli.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
-		dockerCli.logger.Fatal("Error while listing containers: ", err)
+		dockerCli.logger.Fatalln("Error while listing containers: ", err)
 		return
 	}
 	for _, container := range containers {
@@ -55,6 +55,6 @@ func (dockerCli *DockerCLI) GetContainerInfoByAddr(ip string, port int) *types.C
 	if container, ok := dockerCli.containers[key]; ok {
 		return &container
 	}
-	dockerCli.logger.Error("Can't find container by addr: %s", key)
+	dockerCli.logger.Fatalln("Can't find container by addr: %s", key)
 	return nil
 }

@@ -17,7 +17,7 @@ func (app *FrecoveryApp) initApp() {
 	registryConfig := types.MSConfig{}
 	_, err := client.R().SetHeader("Accept", "application/json").SetResult(&registryConfig).Get(app.RegistryURL)
 	if err != nil {
-		app.Logger.Fatal("Error while getting config from registry: ", err)
+		app.Logger.Fatalln("Error while getting config from registry: ", err)
 		return
 	}
 	for key, value := range registryConfig.Services {
@@ -46,5 +46,5 @@ func (app *FrecoveryApp) initApp() {
 		}
 		app.Gateways[gateway.ServiceName] = gateway
 	}
-	app.Logger.Info("init container success")
+	app.Logger.Infoln("init container success")
 }

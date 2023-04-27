@@ -1,7 +1,7 @@
 package frecovery
 
 func (app *FrecoveryApp) Run() {
-	app.Logger.Info("start frecovery...")
+	app.Logger.Infoln("start frecovery...")
 	app.initApp()
-	app.Logger.Info("stop frecovery...")
+	app.Logger.Infoln("stop frecovery...")
 }
