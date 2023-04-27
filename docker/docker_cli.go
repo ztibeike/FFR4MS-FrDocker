@@ -19,17 +19,17 @@ func NewDockerCLI(logger *logrus.Logger) *DockerCLI {
 	dockerCli := &DockerCLI{logger: logger, containers: make(map[string]types.Container)}
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		logger.Fatalln("Error while creating Docker Client: ", err)
+		logger.Fatal("Error while creating Docker Client: ", err)
 	}
 	dockerCli.cli = cli
 	dockerCli.GetAllContainers()
 	return dockerCli
 }
 
-func (dockerCli *DockerCLI) GetAllContainers() {
-	containers, err := dockerCli.cli.ContainerList(context.Background(), types.ContainerListOptions{})
+func (cli *DockerCLI) GetAllContainers() {
+	containers, err := cli.cli.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
-		dockerCli.logger.Fatalln("Error while listing containers: ", err)
+		cli.logger.Fatal("Error while listing containers: ", err)
 		return
 	}
 	for _, container := range containers {
@@ -41,20 +41,20 @@ func (dockerCli *DockerCLI) GetAllContainers() {
 		}
 		port := int(container.Ports[0].PrivatePort)
 		key := utils.GenerateIdFromIPAndPort(ip, port)
-		dockerCli.containers[key] = container
+		cli.containers[key] = container
 	}
 }
 
-func (dockerCli *DockerCLI) GetContainerInfoByAddr(ip string, port int) *types.Container {
+func (cli *DockerCLI) GetContainerInfoByAddr(ip string, port int) *types.Container {
 	key := utils.GenerateIdFromIPAndPort(ip, port)
-	if container, ok := dockerCli.containers[key]; ok {
+	if container, ok := cli.containers[key]; ok {
 		return &container
 	}
 	// 如果没有找到，重新初始化一次
-	dockerCli.GetAllContainers()
-	if container, ok := dockerCli.containers[key]; ok {
+	cli.GetAllContainers()
+	if container, ok := cli.containers[key]; ok {
 		return &container
 	}
-	dockerCli.logger.Fatalln("Can't find container by addr: %s", key)
+	cli.logger.Fatal("Can't find container by addr: %s", key)
 	return nil
 }

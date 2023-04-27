@@ -2,9 +2,9 @@ package main
 
 import (
 	"gitee.com/zengtao321/frdocker/config"
+	"gitee.com/zengtao321/frdocker/docker"
 	"gitee.com/zengtao321/frdocker/frecovery"
-	"gitee.com/zengtao321/frdocker/utils/docker"
-	"gitee.com/zengtao321/frdocker/utils/logger"
+	"gitee.com/zengtao321/frdocker/logger"
 )
 
 func main() {

@@ -3,8 +3,8 @@ package entity
 import (
 	"sync"
 
+	"gitee.com/zengtao321/frdocker/docker"
 	"gitee.com/zengtao321/frdocker/utils"
-	"gitee.com/zengtao321/frdocker/utils/docker"
 )
 
 type Container struct {
