@@ -18,7 +18,7 @@ type Container struct {
 	mu            sync.RWMutex // 读写锁
 }
 
-func NewContainer(dockerCli *docker.DockerCLI, ip string, port int, serviceName string) *Container {
+func NewContainer(dockerCli *docker.DockerCLI, ip string, port int, serviceName string) (*Container, error) {
 	container := &Container{
 		Id:          utils.GenerateIdFromIPAndPort(ip, port),
 		IP:          ip,
@@ -26,15 +26,16 @@ func NewContainer(dockerCli *docker.DockerCLI, ip string, port int, serviceName 
 		ServiceName: serviceName,
 		IsHealthy:   true,
 	}
-	fillContainerInfoWithDockerCLI(dockerCli, container)
-	return container
+	err := fillContainerInfoWithDockerCLI(dockerCli, container)
+	return container, err
 }
 
-func fillContainerInfoWithDockerCLI(dockerCli *docker.DockerCLI, container *Container) {
-	dockerContainer := dockerCli.GetContainerInfoByAddr(container.IP, container.Port)
-	if dockerContainer == nil {
-		return
+func fillContainerInfoWithDockerCLI(dockerCli *docker.DockerCLI, container *Container) error {
+	dockerContainer, err := dockerCli.GetContainerInfoByAddr(container.IP, container.Port)
+	if err != nil {
+		return err
 	}
 	container.ContainerID = dockerContainer.ID
 	container.ContainerName = dockerContainer.Names[0]
+	return nil
 }

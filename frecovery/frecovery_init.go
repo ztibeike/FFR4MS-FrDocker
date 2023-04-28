@@ -17,7 +17,7 @@ func (app *FrecoveryApp) initApp() {
 	registryConfig := types.MSConfig{}
 	_, err := client.R().SetHeader("Accept", "application/json").SetResult(&registryConfig).Get(app.RegistryURL)
 	if err != nil {
-		app.Logger.Fatalln("Error while getting config from registry: ", err)
+		app.Logger.Fatal("Error while getting config from registry: ", err)
 		return
 	}
 	for key, value := range registryConfig.Services {
@@ -29,7 +29,10 @@ func (app *FrecoveryApp) initApp() {
 				service.IsLeaf, _ = strconv.ParseBool(leaf)
 			}
 			service.Containers = append(service.Containers, msInstance.Address)
-			container := entity.NewContainer(app.DockerCli, msInstance.IP, msInstance.Port, service.ServiceName)
+			container, err := entity.NewContainer(app.DockerCli, msInstance.IP, msInstance.Port, service.ServiceName)
+			if err != nil {
+				app.Logger.Errorf("Error while init container of %s:%s:%d: %s", service.ServiceName, msInstance.IP, msInstance.Port, err)
+			}
 			app.Containers[container.Id] = container
 		}
 		app.Services[service.ServiceName] = service
@@ -46,5 +49,5 @@ func (app *FrecoveryApp) initApp() {
 		}
 		app.Gateways[gateway.ServiceName] = gateway
 	}
-	app.Logger.Infoln("init container success")
+	app.Logger.Info("init container success")
 }
