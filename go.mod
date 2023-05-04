@@ -6,6 +6,7 @@ require (
 	github.com/docker/docker v23.0.4+incompatible
 	github.com/fatih/color v1.15.0
 	github.com/go-resty/resty/v2 v2.7.0
+	github.com/google/gopacket v1.1.19
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.7.0
 	go.mongodb.org/mongo-driver v1.11.4

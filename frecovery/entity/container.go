@@ -14,7 +14,7 @@ type Container struct {
 	IP            string       // 容器IP
 	Port          int          // 容器端口
 	IsHealthy     bool         // 容器是否健康
-	ServiceName   string       // 容器所属服务
+	ServiceName   string       // 容器所属服务名称
 	mu            sync.RWMutex // 读写锁
 }
 
