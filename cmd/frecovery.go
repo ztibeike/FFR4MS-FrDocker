@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"gitee.com/zengtao321/frdocker/config"
 	"gitee.com/zengtao321/frdocker/db"
 	"gitee.com/zengtao321/frdocker/docker"
 	"gitee.com/zengtao321/frdocker/frecovery"
@@ -12,6 +11,7 @@ import (
 var (
 	registryURL      string
 	networkInterface string
+	color            bool
 )
 
 var frecoveryCmd = &cobra.Command{
@@ -26,10 +26,11 @@ var frecoveryCmd = &cobra.Command{
 func init() {
 	frecoveryCmd.Flags().StringVarP(&registryURL, "registryURL", "r", "http://localhost:8030/frecovery/conf", "The URL of the system registry")
 	frecoveryCmd.Flags().StringVarP(&networkInterface, "networkInterface", "n", "br-7651c77b1278", "The network interface of the docker network")
+	frecoveryCmd.Flags().BoolVarP(&color, "color", "c", false, "Whether to print colorful logs")
 }
 
 func runFrecovery() {
-	logger := logger.NewLogger("test.log", config.LOG_COLORED)
+	logger := logger.NewLogger("test.log", color)
 	dockerCli, err := docker.NewDockerCLI(logger)
 	if err != nil {
 		logger.Fatal("docker client init failed: ", err)

@@ -6,7 +6,7 @@ import (
 
 	"gitee.com/zengtao321/frdocker/config"
 	"gitee.com/zengtao321/frdocker/frecovery/entity"
-	"gitee.com/zengtao321/frdocker/types"
+	"gitee.com/zengtao321/frdocker/types/dto"
 	"github.com/go-resty/resty/v2"
 	"github.com/google/gopacket/pcap"
 )
@@ -15,7 +15,7 @@ import (
 func (app *FrecoveryApp) initMSSystem() {
 	app.Logger.Info("init microservice system...")
 	client := resty.New()
-	registryConfig := types.MSConfig{}
+	registryConfig := dto.MSConfig{}
 	_, err := client.R().SetHeader("Accept", "application/json").SetResult(&registryConfig).Get(app.RegistryURL)
 	if err != nil {
 		app.Logger.Fatal("error while getting config from registry: ", err)
@@ -26,7 +26,7 @@ func (app *FrecoveryApp) initMSSystem() {
 	app.Logger.Info("init microservice system success")
 }
 
-func (app *FrecoveryApp) initServicesAndGateways(src map[string][]types.MSInstance, dst map[string]*entity.Service) {
+func (app *FrecoveryApp) initServicesAndGateways(src map[string][]dto.MSInstance, dst map[string]*entity.Service) {
 	for key, value := range src {
 		key = strings.ToLower(key)
 		service := entity.NewService(key)

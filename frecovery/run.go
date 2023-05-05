@@ -6,8 +6,8 @@ import (
 	"syscall"
 
 	"gitee.com/zengtao321/frdocker/db"
+	"gitee.com/zengtao321/frdocker/frecovery/entity"
 	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
 )
 
 func (app *FrecoveryApp) Run() {
@@ -34,21 +34,20 @@ close:
 }
 
 func (app *FrecoveryApp) handlePacket(packet gopacket.Packet) {
-
-}
-
-// 检查packet是否合理
-func (app *FrecoveryApp) checkValid(packet gopacket.Packet) bool {
-	// 检查packet有效性
-	if packet == nil || packet.NetworkLayer() == nil || packet.TransportLayer() == nil || packet.TransportLayer().LayerType() != layers.LayerTypeTCP {
-		return false
+	if !app.checkPacketValid(packet) {
+		return
 	}
-	tcp, ok := packet.TransportLayer().(*layers.TCP)
-	if !ok || len(tcp.Payload) < 16 {
-		return false
+	httpInfo, err := entity.NewHttpInfo(packet)
+	if err != nil {
+		app.Logger.Errorf("%s: %s:%d->%s:%d", err.Error(), httpInfo.Src.IP, httpInfo.Src.Port, httpInfo.Dst.IP, httpInfo.Dst.Port)
+		return
 	}
-	// 检查packet是否是微服务系统内部通信消息, 微服务间消息通信路径为: service->gateway->service
-	return true
+	if err = app.setHttpRole(httpInfo); err != nil {
+		app.Logger.Errorf("%s: %s:%d->%s:%d", err.Error(), httpInfo.Src.IP, httpInfo.Src.Port, httpInfo.Dst.IP, httpInfo.Dst.Port)
+		return
+	}
+	app.Logger.Infof("[%s][%s]%s:%d -> [%s][%s]%s:%d", httpInfo.Src.Type, httpInfo.Src.Name, httpInfo.Src.IP, httpInfo.Src.Port,
+		httpInfo.Dst.Type, httpInfo.Dst.Name, httpInfo.Dst.IP, httpInfo.Dst.Port)
 }
 
 func (app *FrecoveryApp) Close() {

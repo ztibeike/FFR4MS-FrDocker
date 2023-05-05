@@ -2,7 +2,9 @@ package utils
 
 import (
 	"os"
-	"strconv"
+
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 )
 
 func PathExists(path string) (bool, error) {
@@ -25,5 +27,15 @@ func PathJoin(paths ...string) string {
 }
 
 func GenerateIdFromIPAndPort(ip string, port int) string {
-	return ip + ":" + strconv.Itoa(port)
+	// return ip + ":" + strconv.Itoa(port) // 由于网关转发时采用随机端口，所以生成id时不能依赖端口
+	return ip
+}
+
+// 从packet中获取src和dst的IP的Port
+func GetIPAndPort(packet gopacket.Packet) (string, string, int, int) {
+	srcIP := packet.NetworkLayer().NetworkFlow().Src().String()
+	dstIP := packet.NetworkLayer().NetworkFlow().Dst().String()
+	srcPort := int(packet.TransportLayer().(*layers.TCP).SrcPort)
+	dstPort := int(packet.TransportLayer().(*layers.TCP).DstPort)
+	return srcIP, dstIP, srcPort, dstPort
 }

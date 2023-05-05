@@ -26,11 +26,11 @@ func NewContainer(dockerCli *docker.DockerCLI, ip string, port int, serviceName 
 		ServiceName: serviceName,
 		IsHealthy:   true,
 	}
-	err := fillContainerInfoWithDockerCLI(dockerCli, container)
+	err := setContainerInfoWithDockerCLI(dockerCli, container)
 	return container, err
 }
 
-func fillContainerInfoWithDockerCLI(dockerCli *docker.DockerCLI, container *Container) error {
+func setContainerInfoWithDockerCLI(dockerCli *docker.DockerCLI, container *Container) error {
 	dockerContainer, err := dockerCli.GetContainerInfoByAddr(container.IP, container.Port)
 	if err != nil {
 		return err

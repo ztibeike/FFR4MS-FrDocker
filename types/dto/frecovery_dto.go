@@ -1,4 +1,4 @@
-package types
+package dto
 
 // Fr-Eureka注册中心dto
 type MSInstance struct {
