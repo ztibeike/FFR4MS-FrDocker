@@ -12,7 +12,7 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
-func (app *FrecoveryApp) monitorMessage() {
+func (app *FrecoveryApp) monitorState() {
 	packetSource := gopacket.NewPacketSource(app.PcapHandle, app.PcapHandle.LinkType())
 	packets := packetSource.Packets()
 	// 监听程序中断信号

@@ -16,7 +16,7 @@ func calculatewithHistoryByTEDA(data []float64, variance []float64, sigma float6
 	// 更新sigma
 	sub := make([]float64, len(data))
 	floats.SubTo(sub, data, variance)
-	sigma = sigma*(k-1)/k + 1.0/(k-1)*floats.Norm(sub, 2)
+	sigma = sigma*(k-1)/k + 1.0/(k-1)*floats.Dot(sub, sub)
 	// 计算离心率
 	ecc := (floats.Norm(sub, 2)/sigma + 1.0) / (2 * k)
 	// 计算阈值

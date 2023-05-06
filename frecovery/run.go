@@ -9,7 +9,7 @@ func (app *FrecoveryApp) Run() {
 	app.initMSSystem()
 	app.initPcap()
 	app.monitorMetric()
-	app.monitorMessage() // 阻塞
+	app.monitorState() // 阻塞
 	app.Close()
 	app.Logger.Info("stop frdocker...")
 }
