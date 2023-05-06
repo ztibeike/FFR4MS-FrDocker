@@ -35,6 +35,7 @@ type HttpInfo struct {
 }
 
 type HttpRole struct {
+	Id   string
 	IP   string
 	Port int
 	Type ContainerType
