@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/google/gopacket"
@@ -26,9 +27,13 @@ func PathJoin(paths ...string) string {
 	return absPath
 }
 
-func GenerateIdFromIPAndPort(ip string, port int) string {
+func GenerateContainerId(ip string, port int) string {
 	// return ip + ":" + strconv.Itoa(port) // 由于网关转发时采用随机端口，所以生成id时不能依赖端口
 	return ip
+}
+
+func GenerateStateId(containerId string, api string, src string, dst string) string {
+	return fmt.Sprintf("%s:%s:%s:%s", containerId, api, src, dst)
 }
 
 // 从packet中获取src和dst的IP的Port

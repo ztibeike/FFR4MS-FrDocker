@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"gitee.com/zengtao321/frdocker/config"
-	"gitee.com/zengtao321/frdocker/frecovery/entity"
 	"gitee.com/zengtao321/frdocker/types/dto"
 	"github.com/go-resty/resty/v2"
 	"github.com/google/gopacket/pcap"
@@ -26,17 +25,17 @@ func (app *FrecoveryApp) initMSSystem() {
 	app.Logger.Info("init microservice system success")
 }
 
-func (app *FrecoveryApp) initServicesAndGateways(src map[string][]dto.MSInstance, dst map[string]*entity.Service) {
+func (app *FrecoveryApp) initServicesAndGateways(src map[string][]dto.MSInstance, dst map[string]*Service) {
 	for key, value := range src {
 		key = strings.ToLower(key)
-		service := entity.NewService(key)
+		service := NewService(key)
 		for _, msInstance := range value {
 			leaf, ok := msInstance.Metadata[config.REGISTRY_METADATA_LEAF_KEY]
 			if ok {
 				service.IsLeaf, _ = strconv.ParseBool(leaf)
 			}
 			service.Containers = append(service.Containers, msInstance.Address)
-			container, err := entity.NewContainer(app.DockerCli, msInstance.IP, msInstance.Port, service.ServiceName)
+			container, err := NewContainer(app.DockerCli, msInstance.IP, msInstance.Port, service.ServiceName, app.Logger)
 			if err != nil {
 				app.Logger.Errorf("error while init container of %s:%s:%d: %s", service.ServiceName, msInstance.IP, msInstance.Port, err)
 			}

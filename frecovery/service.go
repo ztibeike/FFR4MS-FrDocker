@@ -1,4 +1,4 @@
-package entity
+package frecovery
 
 type Service struct {
 	ServiceName string   // 服务名称

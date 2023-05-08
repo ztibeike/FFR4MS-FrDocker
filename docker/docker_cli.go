@@ -43,14 +43,14 @@ func (cli *DockerCLI) GetAllContainers() error {
 			break
 		}
 		port := int(container.Ports[0].PrivatePort)
-		key := utils.GenerateIdFromIPAndPort(ip, port)
+		key := utils.GenerateContainerId(ip, port)
 		cli.containers[key] = container
 	}
 	return nil
 }
 
 func (cli *DockerCLI) GetContainerInfoByAddr(ip string, port int) (*types.Container, error) {
-	key := utils.GenerateIdFromIPAndPort(ip, port)
+	key := utils.GenerateContainerId(ip, port)
 	if container, ok := cli.containers[key]; ok {
 		return &container, nil
 	}
