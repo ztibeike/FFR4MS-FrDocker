@@ -5,6 +5,8 @@ import "github.com/fatih/color"
 const (
 	LOG_FILE_ROOT_PATH = "/var/log/frecovery/"
 
+	LOG_CALLER_ENABLED = true
+
 	// 颜色配置
 	LOG_INFO_COLOR  = color.FgCyan
 	LOG_ERROR_COLOR = color.FgRed

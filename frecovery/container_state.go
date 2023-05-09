@@ -20,7 +20,7 @@ type Pending struct {
 func NewPending(traceId string, start time.Time) *Pending {
 	return &Pending{
 		TraceId: traceId,
-		Ch:      make(chan time.Time),
+		Ch:      make(chan time.Time, 1),
 		Start:   start,
 	}
 }
@@ -53,15 +53,15 @@ func NewContainerState(monitorHandler StateMonitorHandlerFunc) *ContainerState {
 }
 
 // 更新状态，返回更新结果(正常/异常)
-func (state *ContainerState) Update(httpInfo *HttpInfo) bool {
+func (state *ContainerState) Update(httpInfo *HttpInfo) {
 	// 如果存在traceId对应的pending
 	if pending, ok := state.pending[httpInfo.TraceId]; ok {
 		pending.Ch <- httpInfo.Timestamp
 		state.removePending(httpInfo.TraceId)
+		return
 	}
 	// 如果不存在，新建pending
 	state.addPending(httpInfo.TraceId, httpInfo.Timestamp)
-	return true
 }
 
 func (state *ContainerState) addPending(traceId string, start time.Time) {
@@ -77,16 +77,22 @@ func (state *ContainerState) watch(traceId string, ctx context.Context, cancel c
 	defer cancel()
 	for {
 		select {
-		case t := <-pending.Ch:
-			state.updateState(math.Abs(float64(t.Sub(pending.Start).Nanoseconds())))
-			state.invokeMonitorHandler(traceId)
-			return
+		case t, ok := <-pending.Ch:
+			if ok {
+				state.updateState(math.Abs(float64(t.Sub(pending.Start).Nanoseconds())))
+				state.invokeMonitorHandler(traceId)
+			}
+			// 跳出循环, 实测return不能跳出循环
+			goto end
 		case <-ctx.Done():
 			state.updateState(float64(state.MaxTime * config.TEDA_TIMEOUT_FACTOR))
 			state.invokeMonitorHandler(traceId)
-			return
+			// 跳出循环, 实测return不能跳出循环
+			goto end
 		}
 	}
+end:
+	return
 }
 
 func (state *ContainerState) removePending(traceId string) {

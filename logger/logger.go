@@ -14,7 +14,7 @@ func NewLogger(logFile string, colored bool) *logrus.Logger {
 	setDefaultFormatter(logger, colored)
 	setDefaultOutput(logger, logFile)
 	logger.SetLevel(logrus.TraceLevel)
-	logger.SetReportCaller(true)
+	logger.SetReportCaller(config.LOG_CALLER_ENABLED)
 	return logger
 }
 
