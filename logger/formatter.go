@@ -27,9 +27,9 @@ func (formatter *LoggerFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	level := strings.ToUpper(entry.Level.String())[:4]
 	var log string
 	if entry.HasCaller() {
-		log = fmt.Sprintf("[%s][%s][%s:%d]%s\n", timestamp, level, entry.Caller.File, entry.Caller.Line, entry.Message)
+		log = fmt.Sprintf("[%s][%s][%s:%d] %s\n", timestamp, level, entry.Caller.File, entry.Caller.Line, entry.Message)
 	} else {
-		log = fmt.Sprintf("[%s][%s]%s\n", timestamp, level, entry.Message)
+		log = fmt.Sprintf("[%s][%s] %s\n", timestamp, level, entry.Message)
 	}
 	if formatter.colored {
 		log = formatter.colorMessage(entry, log)

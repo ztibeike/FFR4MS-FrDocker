@@ -28,6 +28,8 @@ func (app *FrecoveryApp) monitorState() {
 	}
 }
 
+type MonitorStateCallBack func(traceId string, state *ContainerState)
+
 func (app *FrecoveryApp) handlePacket(packet gopacket.Packet) {
 	if !app.checkPacketValid(packet) {
 		return
@@ -41,15 +43,50 @@ func (app *FrecoveryApp) handlePacket(packet gopacket.Packet) {
 		app.Logger.Error(err.Error())
 		return
 	}
-
 	container := app.getCheckingContainer(httpInfo)
-	if container == nil {
+	if container == nil || !container.IsHealthy {
 		return
 	}
-	container.Status.UpdateContainerState(httpInfo)
+	container.Monitor.UpdateContainerState(httpInfo, app.monitorStateCallback)
+}
 
-	// app.Logger.Infof("[%s][%s]%s:%d -> [%s][%s]%s:%d", httpInfo.Src.Type, httpInfo.Src.Name, httpInfo.Src.IP, httpInfo.Src.Port,
-	// 	httpInfo.Dst.Type, httpInfo.Dst.Name, httpInfo.Dst.IP, httpInfo.Dst.Port)
+func (app *FrecoveryApp) monitorStateCallback(traceId string, state *ContainerState) {
+	container := app.GetContainer(state.Id)
+	state.mu.RLock()
+	defer state.mu.RUnlock()
+	ecc, thresh := state.Ecc, state.Thresh
+	if ecc > thresh {
+		app.Logger.Errorf("[%s][%s:%d][%s] ecc: %.4f, thresh: %.4f", container.ServiceName, container.IP, container.Port, traceId, ecc, thresh)
+		go app.handleContainerAbnormal(container)
+	} else {
+		app.Logger.Tracef("[%s][%s:%d][%s] ecc: %.4f, thresh: %.4f", container.ServiceName, container.IP, container.Port, traceId, ecc, thresh)
+	}
+}
+
+func (app *FrecoveryApp) handleContainerAbnormal(container *Container) {
+	healthy, _ := utils.CheckContainerHealth(container.IP, container.Port)
+	if healthy {
+		return
+	}
+	// 并发控制
+	container.mu.Lock()
+	defer container.mu.Unlock()
+	if !container.IsHealthy {
+		return // 避免重复通知
+	}
+	// 获取容器所属网关
+	service := app.GetService(container.ServiceName)
+	gateway := app.GetGateway(service.Gateway)
+	// TODO 通知网关重播
+	for _, ctn := range gateway.Containers {
+		err := utils.NotifyGatewayReplayMessage(ctn, container.ServiceName, container.IP, container.Port)
+		if err != nil {
+			app.Logger.Errorf("[%s][%s:%d] notify gateway %s replay message failed: %s", container.ServiceName, container.IP, container.Port, ctn, err.Error())
+		} else {
+			container.IsHealthy = false
+			app.Logger.Infof("[%s][%s:%d] notify gateway %s replay message success", container.ServiceName, container.IP, container.Port, ctn)
+		}
+	}
 }
 
 // 检查packet是否合理

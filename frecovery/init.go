@@ -6,22 +6,21 @@ import (
 
 	"gitee.com/zengtao321/frdocker/config"
 	"gitee.com/zengtao321/frdocker/types/dto"
-	"github.com/go-resty/resty/v2"
+	"gitee.com/zengtao321/frdocker/utils"
 	"github.com/google/gopacket/pcap"
 )
 
 // 初始化微服务系统中的services和containers
 func (app *FrecoveryApp) initMSSystem() {
 	app.Logger.Info("init microservice system...")
-	client := resty.New()
-	registryConfig := dto.MSConfig{}
-	_, err := client.R().SetHeader("Accept", "application/json").SetResult(&registryConfig).Get(app.RegistryURL)
+	registryConfig, err := utils.GetRegistryInfo(app.RegistryAddress)
 	if err != nil {
 		app.Logger.Fatal("error while getting config from registry: ", err)
 		return
 	}
 	app.initServicesAndGateways(registryConfig.Services, app.Services)
 	app.initServicesAndGateways(registryConfig.Gateways, app.Gateways)
+	app.setGatewayForServices(registryConfig.Gateways)
 	app.Logger.Info("init microservice system success")
 }
 
@@ -35,13 +34,28 @@ func (app *FrecoveryApp) initServicesAndGateways(src map[string][]dto.MSInstance
 				service.IsLeaf, _ = strconv.ParseBool(leaf)
 			}
 			service.Containers = append(service.Containers, msInstance.Address)
-			container, err := NewContainer(app.DockerCli, msInstance.IP, msInstance.Port, service.ServiceName, app.Logger)
+			container, err := NewContainer(app.DockerCli, msInstance.IP, msInstance.Port, service.ServiceName)
 			if err != nil {
 				app.Logger.Errorf("error while init container of %s:%s:%d: %s", service.ServiceName, msInstance.IP, msInstance.Port, err)
 			}
 			app.Containers[container.Id] = container
 		}
 		dst[service.ServiceName] = service
+	}
+}
+
+func (app *FrecoveryApp) setGatewayForServices(gateway map[string][]dto.MSInstance) {
+	for key, value := range gateway {
+		gatewayName := strings.ToLower(key)
+		for _, instance := range value {
+			serviceName := instance.Metadata[config.REGISTRY_METADATA_GATEWAY_KEY]
+			serviceName = strings.ToLower(serviceName)
+			service, ok := app.Services[serviceName]
+			if !ok {
+				continue
+			}
+			service.Gateway = gatewayName
+		}
 	}
 }
 

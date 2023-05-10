@@ -7,39 +7,38 @@ import "sync"
 type StateFSMNode struct {
 	Id    string          // 容器标识符
 	API   string          // 服务API
-	from  string          // 进入状态的请求的来源服务/网关(在当前设计下是网关)
-	to    string          // 离开状态的请求的目标服务/网关(在当前设计下是网关)
-	state *ContainerState // 状态
-	next  *StateFSMNode   // 下一个状态
-	prev  *StateFSMNode   // 上一个状态
+	From  string          // 进入状态的请求的来源服务/网关(在当前设计下是网关)
+	To    string          // 离开状态的请求的目标服务/网关(在当前设计下是网关)
+	State *ContainerState // 状态
+	Next  *StateFSMNode   // 下一个状态
+	Prev  *StateFSMNode   // 上一个状态
 }
 
 func (node *StateFSMNode) IsLeaveState(httpInfo *HttpInfo) bool {
-	return httpInfo.IsLeaveContainer(node.Id) && httpInfo.Dst.Name == node.to
+	return httpInfo.IsLeaveContainer(node.Id) && httpInfo.Dst.Name == node.To
 }
 
 // 容器状态有限机
 type StateFSM struct {
-	Id             string // 容器标识符
-	API            string // 服务API
-	size           int
-	head           *StateFSMNode           // 状态链表头
-	tail           *StateFSMNode           // 状态链表尾
-	mu             sync.RWMutex            // 锁
-	monitorHandler StateMonitorHandlerFunc // 状态检测回调函数
+	Id       string // 容器标识符
+	API      string // 服务API
+	Size     int
+	Head     *StateFSMNode   // 状态链表头
+	Tail     *StateFSMNode   // 状态链表尾
+	AllNodes []*StateFSMNode // 所有状态节点
+	mu       sync.RWMutex    // 锁
 }
 
-func NewStateFSM(containerId, api string, monitorHandler StateMonitorHandlerFunc) *StateFSM {
+func NewStateFSM(containerId, api string) *StateFSM {
 	fsm := &StateFSM{
-		Id:             containerId,
-		API:            api,
-		size:           0,
-		head:           &StateFSMNode{},
-		tail:           &StateFSMNode{},
-		monitorHandler: monitorHandler,
+		Id:   containerId,
+		API:  api,
+		Size: 0,
+		Head: &StateFSMNode{},
+		Tail: &StateFSMNode{},
 	}
-	fsm.head.next = fsm.tail
-	fsm.tail.prev = fsm.head
+	fsm.Head.Next = fsm.Tail
+	fsm.Tail.Prev = fsm.Head
 	return fsm
 }
 
@@ -52,14 +51,15 @@ func (fsm *StateFSM) AddStateFSMNode(httpInfo *HttpInfo) *StateFSMNode {
 	node := &StateFSMNode{
 		Id:    fsm.Id,
 		API:   fsm.API,
-		from:  other.Name,
-		next:  fsm.tail,
-		prev:  fsm.tail.prev,
-		state: NewContainerState(fsm.monitorHandler),
+		From:  other.Name,
+		Next:  fsm.Tail,
+		Prev:  fsm.Tail.Prev,
+		State: NewContainerState(fsm.Id),
 	}
-	fsm.size += 1
-	fsm.tail.prev.next = node
-	fsm.tail.prev = node
+	fsm.Size += 1
+	fsm.AllNodes = append(fsm.AllNodes, node)
+	fsm.Tail.Prev.Next = node
+	fsm.Tail.Prev = node
 	return node
 }
 
@@ -67,8 +67,8 @@ func (fsm *StateFSM) AddStateFSMNode(httpInfo *HttpInfo) *StateFSMNode {
 func (fsm *StateFSM) GetFirstNode() *StateFSMNode {
 	fsm.mu.RLock()
 	defer fsm.mu.RUnlock()
-	if fsm.size == 0 {
+	if fsm.Size == 0 {
 		return nil
 	}
-	return fsm.head.next
+	return fsm.Head.Next
 }

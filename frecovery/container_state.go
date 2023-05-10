@@ -26,29 +26,37 @@ func NewPending(traceId string, start time.Time) *Pending {
 }
 
 type ContainerState struct {
-	Mean           []float64               // 均值
-	Sigma          float64                 // 标准差
-	Ecc            float64                 // 离心率
-	Thresh         float64                 // 阈值
-	MaxTime        int64                   // 最大时间
-	MinTime        int64                   // 最小时间
-	Cnt            int64                   // 计数
-	pending        map[string]*Pending     // 挂起等待被监测的状态
-	monitorHandler StateMonitorHandlerFunc // 异常处理函数
-	mu             sync.RWMutex            // 读写锁
+	Id       string               // 容器标识符
+	Mean     []float64            // 均值
+	Sigma    float64              // 标准差
+	Ecc      float64              // 离心率
+	Thresh   float64              // 阈值
+	MaxTime  int64                // 最大时间
+	MinTime  int64                // 最小时间
+	Cnt      int64                // 计数
+	pending  map[string]*Pending  // 挂起等待被监测的状态
+	callback MonitorStateCallBack // 异常处理函数
+	mu       sync.RWMutex         // 读写锁
 }
 
-func NewContainerState(monitorHandler StateMonitorHandlerFunc) *ContainerState {
+func NewContainerState(containerId string) *ContainerState {
 	return &ContainerState{
-		Mean:           make([]float64, config.TEDA_DATA_LEN),
-		Sigma:          0.0,
-		Ecc:            0.0,
-		Thresh:         0.0,
-		MaxTime:        int64(60 * time.Second),
-		MinTime:        0,
-		Cnt:            0,
-		pending:        make(map[string]*Pending),
-		monitorHandler: monitorHandler,
+		Id:       containerId,
+		Mean:     make([]float64, config.TEDA_DATA_LEN),
+		Sigma:    0.0,
+		Ecc:      0.0,
+		Thresh:   0.0,
+		MaxTime:  int64(60 * time.Second),
+		MinTime:  0,
+		Cnt:      0,
+		pending:  make(map[string]*Pending),
+		callback: nil,
+	}
+}
+
+func (state *ContainerState) EnsureCallback(callback MonitorStateCallBack) {
+	if state.callback == nil {
+		state.callback = callback
 	}
 }
 
@@ -80,13 +88,13 @@ func (state *ContainerState) watch(traceId string, ctx context.Context, cancel c
 		case t, ok := <-pending.Ch:
 			if ok {
 				state.updateState(math.Abs(float64(t.Sub(pending.Start).Nanoseconds())))
-				state.invokeMonitorHandler(traceId)
+				state.invokeCallback(traceId)
 			}
 			// 跳出循环, 实测return不能跳出循环
 			goto end
 		case <-ctx.Done():
 			state.updateState(float64(state.MaxTime * config.TEDA_TIMEOUT_FACTOR))
-			state.invokeMonitorHandler(traceId)
+			state.invokeCallback(traceId)
 			// 跳出循环, 实测return不能跳出循环
 			goto end
 		}
@@ -117,6 +125,8 @@ func (state *ContainerState) updateState(interval float64) {
 	state.MinTime = int64(state.Mean[0] - config.TEDA_N_SIGMA*math.Sqrt(state.Sigma))
 }
 
-func (state *ContainerState) invokeMonitorHandler(traceId string) {
-	state.monitorHandler(traceId, state)
+func (state *ContainerState) invokeCallback(traceId string) {
+	if state.callback != nil {
+		state.callback(traceId, state)
+	}
 }

@@ -8,7 +8,7 @@ import (
 )
 
 type FrecoveryApp struct {
-	RegistryURL      string
+	RegistryAddress  string
 	NetworkInterface string
 	DockerCli        *docker.DockerCLI
 	Logger           *logrus.Logger
@@ -19,9 +19,9 @@ type FrecoveryApp struct {
 	Containers       map[string]*Container // key: ip:port, value: container
 }
 
-func NewFrecoveryApp(registryURL string, networkInterface string, dockerCli *docker.DockerCLI, logger *logrus.Logger, dbCli *mongo.Database) *FrecoveryApp {
+func NewFrecoveryApp(registryAdress string, networkInterface string, dockerCli *docker.DockerCLI, logger *logrus.Logger, dbCli *mongo.Database) *FrecoveryApp {
 	return &FrecoveryApp{
-		RegistryURL:      registryURL,
+		RegistryAddress:  registryAdress,
 		NetworkInterface: networkInterface,
 		DockerCli:        dockerCli,
 		Logger:           logger,
