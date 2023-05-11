@@ -5,5 +5,7 @@ func CalculateWithHistory(data []float64, mean []float64, sigma float64, n int64
 	return calculatewithHistoryByTEDA(data, mean, sigma, n)
 }
 
-func CalculateWithSample() {
+// 根据总体样本计算, 返回每个样本的离心率和总体阈值
+func CalculateWithSample(data [][]float64) ([]float64, float64) {
+	return calculateWithSampleByTEDA(data)
 }

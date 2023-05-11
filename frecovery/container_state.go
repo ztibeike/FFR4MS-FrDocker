@@ -39,9 +39,9 @@ type ContainerState struct {
 	mu       sync.RWMutex         // 读写锁
 }
 
-func NewContainerState(containerId string) *ContainerState {
+func NewContainerState(id string) *ContainerState {
 	return &ContainerState{
-		Id:       containerId,
+		Id:       id,
 		Mean:     make([]float64, config.TEDA_DATA_LEN),
 		Sigma:    0.0,
 		Ecc:      0.0,
@@ -75,13 +75,14 @@ func (state *ContainerState) Update(httpInfo *HttpInfo) {
 func (state *ContainerState) addPending(traceId string, start time.Time) {
 	pending := NewPending(traceId, start)
 	state.pending[traceId] = pending
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(state.MaxTime*config.TEDA_TIMEOUT_FACTOR))
-	go state.watch(traceId, ctx, cancel)
+	go state.watch(traceId)
 }
 
 // 监测状态
-func (state *ContainerState) watch(traceId string, ctx context.Context, cancel context.CancelFunc) {
+func (state *ContainerState) watch(traceId string) {
 	pending := state.pending[traceId]
+	// 超时控制
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(state.MaxTime*config.TEDA_TIMEOUT_FACTOR))
 	defer cancel()
 	for {
 		select {

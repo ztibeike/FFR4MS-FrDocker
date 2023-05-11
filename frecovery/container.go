@@ -20,15 +20,16 @@ type Container struct {
 }
 
 func NewContainer(dockerCli *docker.DockerCLI, ip string, port int, serviceName string) (*Container, error) {
+	id := utils.GenerateContainerId(ip, port)
 	container := &Container{
-		Id:          utils.GenerateContainerId(ip, port),
+		Id:          id,
 		IP:          ip,
 		Port:        port,
 		ServiceName: serviceName,
 		IsHealthy:   true,
-		Monitor:     NewContainerMonitor(utils.GenerateContainerId(ip, port)),
 	}
 	err := container.setContainerInfoWithDockerCLI(dockerCli)
+	container.Monitor = NewContainerMonitor(container.Id, container.ContainerID)
 	return container, err
 }
 

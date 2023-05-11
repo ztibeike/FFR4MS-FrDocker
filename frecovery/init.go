@@ -33,10 +33,10 @@ func (app *FrecoveryApp) initServicesAndGateways(src map[string][]dto.MSInstance
 			if ok {
 				service.IsLeaf, _ = strconv.ParseBool(leaf)
 			}
-			service.Containers = append(service.Containers, msInstance.Address)
 			container, err := NewContainer(app.DockerCli, msInstance.IP, msInstance.Port, service.ServiceName)
+			service.Containers = append(service.Containers, container.Id)
 			if err != nil {
-				app.Logger.Errorf("error while init container of %s:%s:%d: %s", service.ServiceName, msInstance.IP, msInstance.Port, err)
+				app.Logger.Fatalf("error while init container of %s:%s:%d: %s", service.ServiceName, msInstance.IP, msInstance.Port, err)
 			}
 			app.Containers[container.Id] = container
 		}

@@ -2,21 +2,34 @@ package frecovery
 
 import (
 	"errors"
+
+	"gitee.com/zengtao321/frdocker/docker"
 )
 
 type ContainerMonitor struct {
 	Id           string                   // 容器标识符
+	ContainerId  string                   // 容器ID
 	FSMs         map[string]*StateFSM     // 容器状态
 	runningState map[string]*StateFSMNode // 正在运行的traceId当前状态
 	Metric       *ContainerMetric         // 容器指标
 }
 
-func NewContainerMonitor(id string) *ContainerMonitor {
+func NewContainerMonitor(id, containerId string) *ContainerMonitor {
 	return &ContainerMonitor{
 		Id:           id,
+		ContainerId:  containerId,
 		FSMs:         make(map[string]*StateFSM),
 		runningState: make(map[string]*StateFSMNode),
+		Metric:       NewContainerMetric(id, containerId),
 	}
+}
+
+func (monitor *ContainerMonitor) UpdateContainerMetric(dockerCli *docker.DockerCLI) error {
+	return monitor.Metric.Update(dockerCli)
+}
+
+func (monitor *ContainerMonitor) UpdateContainerEcc(ecc, thresh float64) {
+	monitor.Metric.UpdateEcc(ecc, thresh)
 }
 
 func (monitor *ContainerMonitor) UpdateContainerState(httpInfo *HttpInfo, callback MonitorStateCallBack) error {

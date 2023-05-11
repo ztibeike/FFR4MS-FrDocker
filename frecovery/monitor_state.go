@@ -12,12 +12,12 @@ import (
 )
 
 func (app *FrecoveryApp) monitorState() {
+	app.Logger.Info("start state monitoring...")
 	packetSource := gopacket.NewPacketSource(app.PcapHandle, app.PcapHandle.LinkType())
 	packets := packetSource.Packets()
 	// 监听程序中断信号
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGPIPE, syscall.SIGABRT, syscall.SIGQUIT)
-	app.Logger.Infof("Start Capturing Packets on Interface: %s", app.NetworkInterface)
 	for {
 		select {
 		case packet := <-packets:
@@ -56,10 +56,10 @@ func (app *FrecoveryApp) monitorStateCallback(traceId string, state *ContainerSt
 	defer state.mu.RUnlock()
 	ecc, thresh := state.Ecc, state.Thresh
 	if ecc > thresh {
-		app.Logger.Errorf("[%s][%s:%d][%s] ecc: %.4f, thresh: %.4f", container.ServiceName, container.IP, container.Port, traceId, ecc, thresh)
+		app.Logger.Errorf("[state][%s][%s:%d][%s] ecc: %.4f, thresh: %.4f", container.ServiceName, container.IP, container.Port, traceId, ecc, thresh)
 		go app.handleContainerAbnormal(container)
 	} else {
-		app.Logger.Tracef("[%s][%s:%d][%s] ecc: %.4f, thresh: %.4f", container.ServiceName, container.IP, container.Port, traceId, ecc, thresh)
+		app.Logger.Tracef("[state][%s][%s:%d][%s] ecc: %.4f, thresh: %.4f", container.ServiceName, container.IP, container.Port, traceId, ecc, thresh)
 	}
 }
 

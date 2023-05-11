@@ -11,4 +11,6 @@ const (
 
 	CONTAINER_HEALTH_CHECK_URI     = "/actuator/health"
 	CONTAINER_HEALTH_CHECK_TIMEOUT = 300 * time.Millisecond
+
+	MONITOR_METRIC_INTERVAL = "@every 30s"
 )

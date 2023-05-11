@@ -29,9 +29,9 @@ type StateFSM struct {
 	mu       sync.RWMutex    // 锁
 }
 
-func NewStateFSM(containerId, api string) *StateFSM {
+func NewStateFSM(id, api string) *StateFSM {
 	fsm := &StateFSM{
-		Id:   containerId,
+		Id:   id,
 		API:  api,
 		Size: 0,
 		Head: &StateFSMNode{},

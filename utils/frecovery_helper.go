@@ -35,7 +35,7 @@ func CheckContainerHealth(ip string, port int) (bool, error) {
 
 // 通知网关进行消息重播
 func NotifyGatewayReplayMessage(gatewayAddr, serviceName, containerIP string, containerPort int) error {
-	result := dto.FrecoveryResponse{}
+	result := dto.CommonResponse[any]{}
 	url := fmt.Sprintf("http://%s%s", gatewayAddr, config.GATEWAY_REPLAY_MESSAGE_URI)
 	data := dto.ReplayMessageDTO{
 		ServiceName:      serviceName,
@@ -46,11 +46,11 @@ func NotifyGatewayReplayMessage(gatewayAddr, serviceName, containerIP string, co
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept", "application/json").
 		SetBody(data).SetResult(&result).Post(url)
-	if err != nil || resp.StatusCode() != http.StatusOK {
+	if err != nil {
 		return err
 	}
-	if result.Code != http.StatusOK {
-		return fmt.Errorf("error status code: %d", result.Code)
+	if result.Code != http.StatusOK || resp.StatusCode() != http.StatusOK {
+		return fmt.Errorf("error result code %d or status code: %d", result.Code, resp.StatusCode())
 	}
 	return nil
 }
