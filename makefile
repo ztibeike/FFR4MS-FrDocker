@@ -8,6 +8,7 @@ all: clean build
 .PHONY: build
 build:
 	@echo "Building..."
+	@go mod tidy
 	@go build -o $(BUILD_PATH)/$(APP_NAME) main.go
 
 .PHONY: install
@@ -23,4 +24,4 @@ uninstall:
 .PHONY: clean
 clean:
 	@echo "Cleaning..."
-	@rm -rf $(BUILD_PATH)/*
+	@rm -rf $(BUILD_PATH)

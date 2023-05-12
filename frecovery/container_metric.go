@@ -7,16 +7,16 @@ import (
 )
 
 type ContainerMetric struct {
-	Id          string  // 容器标识符
-	ContainerId string  // 容器ID
-	CPU         float64 // CPU使用率
-	Mem         float64 // 内存使用率
-	NetUp       float64 // 网络上传量
-	NetDn       float64 // 网络下载量
-	DiskR       float64 // 磁盘读取量
-	DiskW       float64 // 磁盘写入量
-	Ecc         float64 // 离心率
-	Thresh      float64 // 阈值
+	Id          string  `json:"id" bson:"id"`                   // 容器标识符
+	ContainerId string  `json:"containerId" bson:"containerId"` // 容器ID
+	CPU         float64 `json:"cpu" bson:"cpu"`                 // CPU使用率
+	Mem         float64 `json:"mem" bson:"mem"`                 // 内存使用率
+	NetUp       float64 `json:"netUp" bson:"netUp"`             // 网络上传量
+	NetDn       float64 `json:"netDn" bson:"netDn"`             // 网络下载量
+	DiskR       float64 `json:"diskR" bson:"diskR"`             // 磁盘读取量
+	DiskW       float64 `json:"diskW" bson:"diskW"`             // 磁盘写入量
+	Ecc         float64 `json:"ecc" bson:"ecc"`                 // 离心率
+	Thresh      float64 `json:"thresh" bson:"thresh"`           // 阈值
 	mu          sync.RWMutex
 }
 

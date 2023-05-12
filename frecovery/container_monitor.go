@@ -7,11 +7,11 @@ import (
 )
 
 type ContainerMonitor struct {
-	Id           string                   // 容器标识符
-	ContainerId  string                   // 容器ID
-	FSMs         map[string]*StateFSM     // 容器状态
+	Id           string                   `json:"id" bson:"id"`                   // 容器标识符
+	ContainerId  string                   `json:"containerId" bson:"containerId"` // 容器ID
+	FSMs         map[string]*StateFSM     `json:"fsms" bson:"fsms"`               // 容器状态
 	runningState map[string]*StateFSMNode // 正在运行的traceId当前状态
-	Metric       *ContainerMetric         // 容器指标
+	Metric       *ContainerMetric         `json:"metric" bson:"metric"` // 容器指标
 }
 
 func NewContainerMonitor(id, containerId string) *ContainerMonitor {

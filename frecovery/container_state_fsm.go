@@ -5,13 +5,13 @@ import "sync"
 // 状态有限机中的工作状态节点;
 // 一个状态由http(dst=current)开启, 由http(src=current)关闭
 type StateFSMNode struct {
-	Id    string          // 容器标识符
-	API   string          // 服务API
-	From  string          // 进入状态的请求的来源服务/网关(在当前设计下是网关)
-	To    string          // 离开状态的请求的目标服务/网关(在当前设计下是网关)
-	State *ContainerState // 状态
-	Next  *StateFSMNode   // 下一个状态
-	Prev  *StateFSMNode   // 上一个状态
+	Id    string          `json:"id" bson:"id"`       // 容器标识符
+	API   string          `json:"api" bson:"api"`     // 服务API
+	From  string          `json:"from" bson:"from"`   // 进入状态的请求的来源服务/网关(在当前设计下是网关)
+	To    string          `json:"to" bson:"to"`       // 离开状态的请求的目标服务/网关(在当前设计下是网关)
+	State *ContainerState `json:"state" bson:"state"` // 状态
+	Next  *StateFSMNode   `json:"next" bson:"next"`   // 下一个状态
+	Prev  *StateFSMNode   `json:"prev" bson:"prev"`   // 上一个状态
 }
 
 func (node *StateFSMNode) IsLeaveState(httpInfo *HttpInfo) bool {

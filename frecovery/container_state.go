@@ -26,14 +26,14 @@ func NewPending(traceId string, start time.Time) *Pending {
 }
 
 type ContainerState struct {
-	Id       string               // 容器标识符
-	Mean     []float64            // 均值
-	Sigma    float64              // 标准差
-	Ecc      float64              // 离心率
-	Thresh   float64              // 阈值
-	MaxTime  int64                // 最大时间
-	MinTime  int64                // 最小时间
-	Cnt      int64                // 计数
+	Id       string               `json:"id" bson:"id"`           // 容器标识符
+	Mean     []float64            `json:"mean" bson:"mean"`       // 均值
+	Sigma    float64              `json:"sigma" bson:"sigma"`     // 标准差
+	Ecc      float64              `json:"ecc" bson:"ecc"`         // 离心率
+	Thresh   float64              `json:"thresh" bson:"thresh"`   // 阈值
+	MaxTime  int64                `json:"maxTime" bson:"maxTime"` // 最大时间
+	MinTime  int64                `json:"minTime" bson:"minTime"` // 最小时间
+	Cnt      int64                `json:"cnt" bson:"cnt"`         // 计数
 	pending  map[string]*Pending  // 挂起等待被监测的状态
 	callback MonitorStateCallBack // 异常处理函数
 	mu       sync.RWMutex         // 读写锁
