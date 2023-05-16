@@ -62,6 +62,9 @@ func (state *ContainerState) EnsureCallback(callback MonitorStateCallBack) {
 
 // 更新状态，返回更新结果(正常/异常)
 func (state *ContainerState) Update(httpInfo *HttpInfo) {
+	if state.pending == nil {
+		state.pending = make(map[string]*Pending)
+	}
 	// 如果存在traceId对应的pending
 	if pending, ok := state.pending[httpInfo.TraceId]; ok {
 		pending.Ch <- httpInfo.Timestamp

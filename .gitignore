@@ -22,7 +22,7 @@ __debug_bin
 
 vendor
 
-*.mongodb
+*.mongodb*
 
 test
 

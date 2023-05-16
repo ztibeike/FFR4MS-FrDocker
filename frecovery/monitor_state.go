@@ -2,6 +2,7 @@ package frecovery
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -79,7 +80,9 @@ func (app *FrecoveryApp) handleContainerAbnormal(container *Container) {
 	gateway := app.GetGateway(service.Gateway)
 	// TODO 通知网关重播
 	for _, ctn := range gateway.Containers {
-		err := utils.NotifyGatewayReplayMessage(ctn, container.ServiceName, container.IP, container.Port)
+		gatewayContainer := app.Containers[ctn]
+		addr := fmt.Sprintf("%s:%d", gatewayContainer.IP, gatewayContainer.Port)
+		err := utils.NotifyGatewayReplayMessage(addr, container.ServiceName, container.IP, container.Port)
 		if err != nil {
 			app.Logger.Errorf("[%s][%s:%d] notify gateway %s replay message failed: %s", container.ServiceName, container.IP, container.Port, ctn, err.Error())
 		} else {

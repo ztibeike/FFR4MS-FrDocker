@@ -10,8 +10,8 @@ type StateFSMNode struct {
 	From  string          `json:"from" bson:"from"`   // 进入状态的请求的来源服务/网关(在当前设计下是网关)
 	To    string          `json:"to" bson:"to"`       // 离开状态的请求的目标服务/网关(在当前设计下是网关)
 	State *ContainerState `json:"state" bson:"state"` // 状态
-	Next  *StateFSMNode   `json:"next" bson:"next"`   // 下一个状态
-	Prev  *StateFSMNode   `json:"prev" bson:"prev"`   // 上一个状态
+	Next  *StateFSMNode   `json:"-" bson:"-"`         // 下一个状态
+	Prev  *StateFSMNode   `json:"-" bson:"-"`         // 上一个状态
 }
 
 func (node *StateFSMNode) IsLeaveState(httpInfo *HttpInfo) bool {
@@ -20,12 +20,12 @@ func (node *StateFSMNode) IsLeaveState(httpInfo *HttpInfo) bool {
 
 // 容器状态有限机
 type StateFSM struct {
-	Id       string // 容器标识符
-	API      string // 服务API
-	Size     int
-	Head     *StateFSMNode   // 状态链表头
-	Tail     *StateFSMNode   // 状态链表尾
-	AllNodes []*StateFSMNode // 所有状态节点
+	Id       string          `json:"id" bson:"id"`   // 容器标识符
+	API      string          `json:"api" bson:"api"` // 服务API
+	Size     int             `json:"size" bson:"size"`
+	Head     *StateFSMNode   `json:"head" bson:"head"`         // 状态链表头
+	Tail     *StateFSMNode   `json:"tail" bson:"tail"`         // 状态链表尾
+	AllNodes []*StateFSMNode `json:"allNodes" bson:"allNodes"` // 所有状态节点
 	mu       sync.RWMutex    // 锁
 }
 

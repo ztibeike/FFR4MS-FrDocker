@@ -33,6 +33,9 @@ func (monitor *ContainerMonitor) UpdateContainerEcc(ecc, thresh float64) {
 }
 
 func (monitor *ContainerMonitor) UpdateContainerState(httpInfo *HttpInfo, callback MonitorStateCallBack) error {
+	if monitor.runningState == nil {
+		monitor.runningState = make(map[string]*StateFSMNode)
+	}
 	node := monitor.getStateFSMNode(httpInfo)
 	if node != nil {
 		monitor.runningState[httpInfo.TraceId] = node
@@ -76,6 +79,9 @@ func (monitor *ContainerMonitor) getStateFSMNode(httpInfo *HttpInfo) *StateFSMNo
 }
 
 func (monitor *ContainerMonitor) getStateFSM(api string) *StateFSM {
+	if monitor.FSMs == nil {
+		monitor.FSMs = make(map[string]*StateFSM)
+	}
 	if fsm, ok := monitor.FSMs[api]; ok {
 		return fsm
 	}

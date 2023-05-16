@@ -8,14 +8,14 @@ import (
 )
 
 type Container struct {
-	Id            string            // 容器标识符
-	ContainerID   string            // 容器ID
-	ContainerName string            // 容器名称
-	IP            string            // 容器IP
-	Port          int               // 容器端口
-	IsHealthy     bool              // 容器是否健康
-	ServiceName   string            // 容器所属服务名称
-	Monitor       *ContainerMonitor // 容器状态
+	Id            string            `json:"id" bson:"id"`                       // 容器标识符
+	ContainerID   string            `json:"containerID " bson:"containerID"`    // 容器ID
+	ContainerName string            `json:"containerName" bson:"containerName"` // 容器名称
+	IP            string            `json:"ip" bson:"ip"`                       // 容器IP
+	Port          int               `json:"port" bson:"port"`                   // 容器端口
+	IsHealthy     bool              `json:"isHealthy" bson:"isHealthy"`         // 容器是否健康
+	ServiceName   string            `json:"serviceName" bson:"serviceName"`     // 容器所属服务名称
+	Monitor       *ContainerMonitor `json:"monitor" bson:"monitor"`             // 容器状态
 	mu            sync.RWMutex      // 读写锁
 }
 
