@@ -78,7 +78,7 @@ func (app *FrecoveryApp) handleContainerAbnormal(container *Container) {
 	// 获取容器所属网关
 	service := app.GetService(container.ServiceName)
 	gateway := app.GetGateway(service.Gateway)
-	// TODO 通知网关重播
+	// 通知网关重播
 	for _, ctn := range gateway.Containers {
 		gatewayContainer := app.Containers[ctn]
 		addr := fmt.Sprintf("%s:%d", gatewayContainer.IP, gatewayContainer.Port)
