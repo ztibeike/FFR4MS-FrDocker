@@ -9,7 +9,7 @@ func (app *FrecoveryApp) Run() {
 	app.Logger.Info("start frdocker...")
 	app.initMSSystem()
 	app.initPcap()
-	persistecheduler := app.Persist()
+	persistecheduler := app.persist()
 	metricScheduler := app.monitorMetric()
 	app.monitorState() // 阻塞
 	app.Close(persistecheduler, metricScheduler)
@@ -18,6 +18,8 @@ func (app *FrecoveryApp) Run() {
 
 func (app *FrecoveryApp) Close(persistScheduler, metricScheduler *cron.Cron) {
 	persistScheduler.Stop()
+	// 退出时保存状态
+	app.persistenceTask()
 	metricScheduler.Stop()
 	db.CloseMongo(app.DbCli)
 	app.PcapHandle.Close()

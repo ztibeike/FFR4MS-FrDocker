@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (app *FrecoveryApp) Persist() *cron.Cron {
+func (app *FrecoveryApp) persist() *cron.Cron {
 	app.Logger.Info("register persistence scheduled task...")
 	c := cron.New()
 	c.AddFunc(config.FRECOVERY_PERSISTENCE_INTERVAL, app.persistenceTask)
