@@ -8,6 +8,7 @@ import (
 
 	"gitee.com/zengtao321/frdocker/config"
 	"gitee.com/zengtao321/frdocker/frecovery/algo"
+	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 type Pending struct {
@@ -26,17 +27,17 @@ func NewPending(traceId string, start time.Time) *Pending {
 }
 
 type ContainerState struct {
-	Id       string               // 容器标识符
-	Mean     []float64            // 均值
-	Sigma    float64              // 标准差
-	Ecc      float64              // 离心率
-	Thresh   float64              // 阈值
-	MaxTime  int64                // 最大时间
-	MinTime  int64                // 最小时间
-	Cnt      int64                // 计数
-	pending  map[string]*Pending  // 挂起等待被监测的状态
-	callback MonitorStateCallBack // 异常处理函数
-	mu       sync.RWMutex         // 读写锁
+	Id       string                               // 容器标识符
+	Mean     []float64                            // 均值
+	Sigma    float64                              // 标准差
+	Ecc      float64                              // 离心率
+	Thresh   float64                              // 阈值
+	MaxTime  int64                                // 最大时间
+	MinTime  int64                                // 最小时间
+	Cnt      int64                                // 计数
+	pending  cmap.ConcurrentMap[string, *Pending] // 挂起等待被监测的状态
+	callback MonitorStateCallBack                 // 异常处理函数
+	mu       sync.RWMutex                         // 读写锁
 }
 
 func NewContainerState(id string) *ContainerState {
@@ -49,7 +50,7 @@ func NewContainerState(id string) *ContainerState {
 		MaxTime:  int64(60 * time.Second),
 		MinTime:  0,
 		Cnt:      0,
-		pending:  make(map[string]*Pending),
+		pending:  cmap.New[*Pending](),
 		callback: nil,
 	}
 }
@@ -63,7 +64,7 @@ func (state *ContainerState) EnsureCallback(callback MonitorStateCallBack) {
 // 更新状态，返回更新结果(正常/异常)
 func (state *ContainerState) Update(httpInfo *HttpInfo) {
 	// 如果存在traceId对应的pending
-	if pending, ok := state.pending[httpInfo.TraceId]; ok {
+	if pending, ok := state.pending.Get(httpInfo.TraceId); ok {
 		pending.Ch <- httpInfo.Timestamp
 		state.removePending(httpInfo.TraceId)
 		return
@@ -74,13 +75,16 @@ func (state *ContainerState) Update(httpInfo *HttpInfo) {
 
 func (state *ContainerState) addPending(traceId string, start time.Time) {
 	pending := NewPending(traceId, start)
-	state.pending[traceId] = pending
+	state.pending.Set(traceId, pending)
 	go state.watch(traceId)
 }
 
 // 监测状态
 func (state *ContainerState) watch(traceId string) {
-	pending := state.pending[traceId]
+	pending, ok := state.pending.Get(traceId)
+	if !ok {
+		return
+	}
 	// 超时控制
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(state.MaxTime*config.TEDA_TIMEOUT_FACTOR))
 	defer cancel()
@@ -105,9 +109,12 @@ end:
 }
 
 func (state *ContainerState) removePending(traceId string) {
-	pending := state.pending[traceId]
+	pending, ok := state.pending.Get(traceId)
+	if !ok {
+		return
+	}
 	close(pending.Ch)
-	delete(state.pending, traceId)
+	state.pending.Remove(traceId)
 }
 
 func (state *ContainerState) updateState(interval float64) {
