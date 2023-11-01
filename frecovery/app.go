@@ -1,8 +1,10 @@
 package frecovery
 
 import (
+	"gitee.com/zengtao321/frdocker/config"
 	"gitee.com/zengtao321/frdocker/docker"
 	"github.com/google/gopacket/pcap"
+	"github.com/panjf2000/ants/v2"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -17,10 +19,11 @@ type FrecoveryApp struct {
 	Services         map[string]*Service   `json:"services" bson:"services"`     // key: serviceName, value: service
 	Gateways         map[string]*Service   `json:"gateways" bson:"gateways"`     // key: gatewayName, value: gateway
 	Containers       map[string]*Container `json:"containers" bson:"containers"` // key: ip:port, value: container
+	Pool             *ants.Pool            `json:"-" bson:"-"`
 }
 
 func NewFrecoveryApp(registryAdress string, networkInterface string, dockerCli *docker.DockerCLI, logger *logrus.Logger, dbCli *mongo.Database) *FrecoveryApp {
-	return &FrecoveryApp{
+	app := &FrecoveryApp{
 		RegistryAddress:  registryAdress,
 		NetworkInterface: networkInterface,
 		DockerCli:        dockerCli,
@@ -30,6 +33,8 @@ func NewFrecoveryApp(registryAdress string, networkInterface string, dockerCli *
 		Gateways:         make(map[string]*Service),
 		Containers:       make(map[string]*Container),
 	}
+	app.Pool, _ = ants.NewPool(config.FRECOVERY_GOROUTINE_POOL_COUNT)
+	return app
 }
 
 // 获取容器

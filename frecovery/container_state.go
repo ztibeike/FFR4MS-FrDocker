@@ -9,6 +9,7 @@ import (
 	"gitee.com/zengtao321/frdocker/config"
 	"gitee.com/zengtao321/frdocker/frecovery/algo"
 	cmap "github.com/orcaman/concurrent-map/v2"
+	"github.com/panjf2000/ants/v2"
 )
 
 type Pending struct {
@@ -66,7 +67,7 @@ func (state *ContainerState) EnsurePending() {
 }
 
 // 更新状态，返回更新结果(正常/异常)
-func (state *ContainerState) Update(httpInfo *HttpInfo) {
+func (state *ContainerState) Update(httpInfo *HttpInfo, pool *ants.Pool) {
 	// 如果存在traceId对应的pending
 	if pending, ok := state.pending.Get(httpInfo.TraceId); ok {
 		pending.Ch <- httpInfo.Timestamp
@@ -74,13 +75,13 @@ func (state *ContainerState) Update(httpInfo *HttpInfo) {
 		return
 	}
 	// 如果不存在，新建pending
-	state.addPending(httpInfo.TraceId, httpInfo.Timestamp)
+	state.addPending(httpInfo.TraceId, httpInfo.Timestamp, pool)
 }
 
-func (state *ContainerState) addPending(traceId string, start time.Time) {
+func (state *ContainerState) addPending(traceId string, start time.Time, pool *ants.Pool) {
 	pending := NewPending(traceId, start)
 	state.pending.Set(traceId, pending)
-	go state.watch(traceId)
+	pool.Submit(func() { state.watch(traceId) })
 }
 
 // 监测状态

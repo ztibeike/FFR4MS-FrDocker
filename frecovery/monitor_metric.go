@@ -8,8 +8,6 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-type MonitorMetricCallback func(metric *ContainerMetric)
-
 func (app *FrecoveryApp) monitorMetric() *cron.Cron {
 	app.Logger.Info("start metric monitoring...")
 	c := cron.New()
@@ -43,12 +41,7 @@ func (app *FrecoveryApp) monitorMetricForContainerGroup(containers []*Container)
 	wg.Add(n)
 	data := make([][]float64, n)
 	for idx, container := range containers {
-		go func(idx int, container *Container) {
-			defer wg.Done()
-			container.Monitor.UpdateContainerMetric(app.DockerCli)
-			metric := container.Monitor.Metric
-			data[idx] = []float64{metric.CPU, metric.Mem, metric.NetUp, metric.NetDn, metric.DiskR, metric.DiskW}
-		}(idx, container)
+		app.Pool.Submit(app.monitorTaskFunc(data, idx, container, &wg))
 	}
 	wg.Wait()
 	allEcc, thresh := algo.CalculateWithSample(data)
@@ -58,5 +51,14 @@ func (app *FrecoveryApp) monitorMetricForContainerGroup(containers []*Container)
 		if ecc > thresh {
 			app.Logger.Errorf("[metric][%s][%s:%d] ecc: %.4f, thresh: %.4f", container.ServiceName, container.IP, container.Port, ecc, thresh)
 		}
+	}
+}
+
+func (app *FrecoveryApp) monitorTaskFunc(data [][]float64, idx int, container *Container, wg *sync.WaitGroup) AntsTaskWrapper {
+	return func() {
+		defer wg.Done()
+		container.Monitor.UpdateContainerMetric(app.DockerCli)
+		metric := container.Monitor.Metric
+		data[idx] = []float64{metric.CPU, metric.Mem, metric.NetUp, metric.NetDn, metric.DiskR, metric.DiskW}
 	}
 }

@@ -2,6 +2,7 @@ package frecovery
 
 import (
 	"gitee.com/zengtao321/frdocker/db"
+	"github.com/panjf2000/ants/v2"
 	"github.com/robfig/cron/v3"
 )
 
@@ -24,4 +25,6 @@ func (app *FrecoveryApp) Close(persistScheduler, metricScheduler *cron.Cron) {
 	db.CloseMongo(app.DbCli)
 	app.PcapHandle.Close()
 	app.Logger.Writer().Close()
+	app.Pool.Release()
+	ants.Release()
 }

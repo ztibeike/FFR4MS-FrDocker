@@ -115,7 +115,6 @@ func (app *FrecoveryApp) restoreFromDB() {
 					allNodes[i+1].Prev = allNodes[i]
 					allNodes[i].State.EnsurePending()
 				}
-
 			}
 		}
 	}

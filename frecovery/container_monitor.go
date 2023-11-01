@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"gitee.com/zengtao321/frdocker/docker"
+	"github.com/panjf2000/ants/v2"
 )
 
 type ContainerMonitor struct {
@@ -32,7 +33,7 @@ func (monitor *ContainerMonitor) UpdateContainerEcc(ecc, thresh float64) {
 	monitor.Metric.UpdateEcc(ecc, thresh)
 }
 
-func (monitor *ContainerMonitor) UpdateContainerState(httpInfo *HttpInfo, callback MonitorStateCallBack) error {
+func (monitor *ContainerMonitor) UpdateContainerState(httpInfo *HttpInfo, callback MonitorStateCallBack, pool *ants.Pool) error {
 	if monitor.runningState == nil {
 		monitor.runningState = make(map[string]*StateFSMNode)
 	}
@@ -40,7 +41,7 @@ func (monitor *ContainerMonitor) UpdateContainerState(httpInfo *HttpInfo, callba
 	if node != nil {
 		monitor.runningState[httpInfo.TraceId] = node
 		node.State.EnsureCallback(callback)
-		node.State.Update(httpInfo)
+		node.State.Update(httpInfo, pool)
 		if httpInfo.IsEndContainerProcess(monitor.Id) {
 			delete(monitor.runningState, httpInfo.TraceId)
 		}

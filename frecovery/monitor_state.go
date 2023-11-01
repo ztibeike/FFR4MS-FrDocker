@@ -29,8 +29,6 @@ func (app *FrecoveryApp) monitorState() {
 	}
 }
 
-type MonitorStateCallBack func(traceId string, state *ContainerState)
-
 func (app *FrecoveryApp) handlePacket(packet gopacket.Packet) {
 	if !app.checkPacketValid(packet) {
 		return
@@ -48,7 +46,7 @@ func (app *FrecoveryApp) handlePacket(packet gopacket.Packet) {
 	if container == nil || !container.IsHealthy {
 		return
 	}
-	container.Monitor.UpdateContainerState(httpInfo, app.monitorStateCallback)
+	container.Monitor.UpdateContainerState(httpInfo, app.monitorStateCallback, app.Pool)
 }
 
 func (app *FrecoveryApp) monitorStateCallback(traceId string, state *ContainerState) {
