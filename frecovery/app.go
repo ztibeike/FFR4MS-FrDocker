@@ -8,15 +8,15 @@ import (
 )
 
 type FrecoveryApp struct {
-	RegistryAddress  string
-	NetworkInterface string
-	DockerCli        *docker.DockerCLI
-	Logger           *logrus.Logger
-	DbCli            *mongo.Database
-	PcapHandle       *pcap.Handle
-	Services         map[string]*Service   // key: serviceName, value: service
-	Gateways         map[string]*Service   // key: gatewayName, value: gateway
-	Containers       map[string]*Container // key: ip:port, value: container
+	RegistryAddress  string                `json:"registryAddress" bson:"registryAddress"`
+	NetworkInterface string                `json:"networkInterface" bson:"networkInterface"`
+	DockerCli        *docker.DockerCLI     `json:"-" bson:"-"`
+	Logger           *logrus.Logger        `json:"-" bson:"-"`
+	DbCli            *mongo.Database       `json:"-" bson:"-"`
+	PcapHandle       *pcap.Handle          `json:"-" bson:"-"`
+	Services         map[string]*Service   `json:"services" bson:"services"`     // key: serviceName, value: service
+	Gateways         map[string]*Service   `json:"gateways" bson:"gateways"`     // key: gatewayName, value: gateway
+	Containers       map[string]*Container `json:"containers" bson:"containers"` // key: ip:port, value: container
 }
 
 func NewFrecoveryApp(registryAdress string, networkInterface string, dockerCli *docker.DockerCLI, logger *logrus.Logger, dbCli *mongo.Database) *FrecoveryApp {

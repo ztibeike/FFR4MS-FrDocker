@@ -13,7 +13,7 @@ type MonitorMetricCallback func(metric *ContainerMetric)
 func (app *FrecoveryApp) monitorMetric() *cron.Cron {
 	app.Logger.Info("start metric monitoring...")
 	c := cron.New()
-	c.AddFunc(config.MONITOR_METRIC_INTERVAL, app.monitorMetricScheduledTask)
+	c.AddFunc(config.CONTAINER_METRIC_MONITOR_INTERVAL, app.monitorMetricScheduledTask)
 	c.Start()
 	return c
 }

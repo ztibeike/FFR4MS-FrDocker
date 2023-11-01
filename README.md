@@ -1,39 +1,61 @@
-# fr-docker-go
+# FFR4MS-FrDocker
 
-#### 介绍
-{**以下是 Gitee 平台说明，您可以替换此简介**
-Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN）。专为开发者提供稳定、高效、安全的云端软件开发协作平台
-无论是个人、团队、或是企业，都能够用 Gitee 实现代码托管、项目管理、协作开发。企业项目请看 [https://gitee.com/enterprises](https://gitee.com/enterprises)}
+## 介绍
 
-#### 软件架构
-软件架构说明
+Fr-Docker是FFR4MS平台的容器监控模块，对微服务系统中各个微服务实例容器的通信消息和性能指标进行监控，实现快速检测定位故障微服务实例。
 
+## 前提条件
 
-#### 安装教程
+### 微服务系统
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+微服务系统的扩展和部署请参考:
 
-#### 使用说明
+FFR4MS: [Gitee](https://gitee.com/zengtao321/ffr4ms) [GitHub](https://github.com/ztibeike/ffr4ms)
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+FFR4MS-Demo [Gitee](https://gitee.com/zengtao321/ffr4ms-demo) [GitHub](https://github.com/ztibeike/ffr4ms-demo)
 
-#### 参与贡献
+### 环境配置
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+1. Golang v1.20
+2. Pcap
+```bash
+apt install libpcap-dev
+```
+3. MongoDB
+```bash
+docker run --name frdocker-mongo --restart always -p 27017:27017 -d mongo --auth
+```
 
+## 安装
 
-#### 特技
+1. 配置MongoDB的用户名密码
+```go
+// config/db_config.go
+MONGO_HOST = "localhost"
+MONGO_PORT = 27017
+MONGO_USER = "frdocker"
+MONGO_PASS = "frdocker"
+```
+2. 编译安装
+```bash
+make && make install
+```
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+## 使用
+1. 查询微服务系统使用的网卡
+```bash
+ifconfig | grep br
+export network="br-xxxxxxxxxxxx"
+```
+2. 指定Fr-Eureka注册中心地址
+```bash
+export registry="host:port"
+```
+3. 开启Fr-Docker
+```bash
+# 无日志颜色
+frdocker frecovery -n ${network} -r ${registry}
+# 启用日志颜色
+frdocker frecovery -n ${network} -r ${registry} --color
+```
+

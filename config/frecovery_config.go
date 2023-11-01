@@ -9,8 +9,10 @@ const (
 
 	GATEWAY_REPLAY_MESSAGE_URI = "/frecovery/replace"
 
-	CONTAINER_HEALTH_CHECK_URI     = "/actuator/health"
-	CONTAINER_HEALTH_CHECK_TIMEOUT = 300 * time.Millisecond
+	CONTAINER_HEALTH_CHECK_URI        = "/actuator/health"
+	CONTAINER_HEALTH_CHECK_TIMEOUT    = 300 * time.Millisecond
+	CONTAINER_METRIC_MONITOR_INTERVAL = "@every 30s"
 
-	MONITOR_METRIC_INTERVAL = "@every 30s"
+	FRECOVERY_PERSISTENCE_INTERVAL   = "@every 1m"
+	FRECOVERY_PERSISTENCE_COLLECTION = "frecovery"
 )

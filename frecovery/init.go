@@ -21,6 +21,7 @@ func (app *FrecoveryApp) initMSSystem() {
 	app.initServicesAndGateways(registryConfig.Services, app.Services)
 	app.initServicesAndGateways(registryConfig.Gateways, app.Gateways)
 	app.setGatewayForServices(registryConfig.Gateways)
+	app.restoreFromDB()
 	app.Logger.Info("init microservice system success")
 }
 
@@ -76,4 +77,42 @@ func (app *FrecoveryApp) initPcap() {
 		return
 	}
 	app.Logger.Info("init pcap success")
+}
+
+func (app *FrecoveryApp) restoreFromDB() {
+	app.Logger.Info("restore from db...")
+	persistedApp := app.getPersistedApp()
+	if persistedApp == nil {
+		return
+	}
+	// 恢复services
+	for name, service := range persistedApp.Services {
+		if _service := app.GetService(name); _service != nil {
+			_service.Calls = service.Calls
+			_service.IsLeaf = service.IsLeaf
+			_service.IsRoot = service.IsRoot
+		}
+	}
+	// 恢复containers
+	for id, container := range persistedApp.Containers {
+		if _container := app.GetContainer(id); _container != nil {
+			_container.IsHealthy = container.IsHealthy
+			_container.Monitor = container.Monitor
+			for _, fsm := range _container.Monitor.FSMs {
+				allNodes := fsm.AllNodes
+				n := len(allNodes)
+				if n == 0 {
+					continue
+				}
+				fsm.Head.Next = allNodes[0]
+				allNodes[0].Prev = fsm.Head
+				fsm.Tail.Prev = allNodes[n-1]
+				allNodes[n-1].Next = fsm.Tail
+				for i := 0; i < n-1; i++ {
+					allNodes[i].Next = allNodes[i+1]
+					allNodes[i+1].Prev = allNodes[i]
+				}
+			}
+		}
+	}
 }
