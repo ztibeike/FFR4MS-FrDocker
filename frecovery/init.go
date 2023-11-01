@@ -106,12 +106,16 @@ func (app *FrecoveryApp) restoreFromDB() {
 				}
 				fsm.Head.Next = allNodes[0]
 				allNodes[0].Prev = fsm.Head
+				allNodes[0].State.EnsurePending()
 				fsm.Tail.Prev = allNodes[n-1]
 				allNodes[n-1].Next = fsm.Tail
+				allNodes[n-1].State.EnsurePending()
 				for i := 0; i < n-1; i++ {
 					allNodes[i].Next = allNodes[i+1]
 					allNodes[i+1].Prev = allNodes[i]
+					allNodes[i].State.EnsurePending()
 				}
+
 			}
 		}
 	}
